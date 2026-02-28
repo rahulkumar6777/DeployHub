@@ -8,8 +8,9 @@ const NAV_LINKS = [
   { to: '/developer', label: 'Developer' },
 ]
 
+const nodeenv = 'production'
 
-const DASHBOARD_URL = 'http://localhost:5173'
+const DASHBOARD_URL = nodeenv === 'production' ? 'https://dashboard.deployhub.cloud' : 'https://localhost:5173'
 
 export default function Navbar() {
   const [scrolled,  setScrolled]  = useState(false)
