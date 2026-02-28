@@ -6,7 +6,7 @@ const corsLocally = {
 }
 
 const corsProdution = {
-    origin: ['https://dashboard.cloudcoderhub.in'],
+    origin: ['https://dashboard.deployhub.cloud'],
     methods: ['POST' , 'GET' , 'PUT' , 'DELETE' , 'OPTIONS' , 'PATCH'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization']
