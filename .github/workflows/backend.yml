@@ -22,7 +22,7 @@ jobs:
           node-version: "20"
 
       - name: Build Docker image
-        run: docker build --no-cache -t ${{ secrets.DOCKER_USERNAME }}/backendDeployhub:latest ./prototype/backend
+        run: docker build --no-cache -t ${{ secrets.DOCKER_USERNAME }}/backenddeployhub:latest ./prototype/backend
 
       - name: DockerHub login
         uses: docker/login-action@v2
@@ -31,7 +31,7 @@ jobs:
           password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
 
       - name: Push image
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/backendDeployhub:latest
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/backenddeployhub:latest
 
 
   deploy:
@@ -52,7 +52,7 @@ jobs:
               --password-stdin
 
             # Pull latest image
-            docker pull ${{ secrets.DOCKER_USERNAME }}/backendDeployhub:latest
+            docker pull ${{ secrets.DOCKER_USERNAME }}/backenddeployhub:latest
 
             # Stop & remove old container
             docker stop apideployhub || true
@@ -84,4 +84,4 @@ jobs:
               -e KEY_SECRET=${{ secrets.KEY_SECRET }} \
               -e DEVLOAD_PROJECT_ID=${{ secrets.DEVLOAD_PROJECT_ID }} \
               -e DEVLOAD_API_KEY=${{ secrets.DEVLOAD_API_KEY }} \
-              ${{ secrets.DOCKER_USERNAME }}/backendDeployhub:latest
+              ${{ secrets.DOCKER_USERNAME }}/backenddeployhub:latest
