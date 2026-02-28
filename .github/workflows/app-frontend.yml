@@ -26,8 +26,7 @@ jobs:
               run: |
                 docker build \
                   --build-arg VITE_RAZORPAY_KEY_ID="${{ secrets.VITE_RAZORPAY_KEY_ID }}" \
-                  -t ${{ secrets.DOCKER_USERNAME }}/deployhub-app-frontend:latest \
-                  .protoptype/app-frontend
+                  -t ${{ secrets.DOCKER_USERNAME }}/deployhub-app-frontend:latest .prototype/app-frontend
 
 
             - name: DockerHub login (access token)
