@@ -52,6 +52,7 @@ jobs:
             docker stop deployhub || true
             docker rm deployhub || true
             docker run -d --name deployhub \
+            -p 127.0.0.1:3002:80 \
             --network cloud \
             --restart always \
              ${{ secrets.DOCKER_USERNAME }}/deployhubfrontend:latest
