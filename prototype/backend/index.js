@@ -20,6 +20,7 @@ const app = express();
 
 
 // use cors
+import { corsOption } from './src/utils/frontendCors.js'
 app.use(cors(corsOption));
 
 
