@@ -62,7 +62,7 @@ jobs:
             docker run -d --name apideployhub \
               --restart always \
               --network cloud \
-              -v /var/run/docker.sock:/var/run/docker.sock
+              -v /var/run/docker.sock:/var/run/docker.sock \
               -p 127.0.0.1:3003:5000 \
               -e NODE_ENV=${{ secrets.NODE_ENV }} \
               -e PRODUCTIONDB_URI=${{ secrets.PRODUCTIONDB_URI }} \
