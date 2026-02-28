@@ -1,0 +1,87 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "prototype/backend/**"
+      - ".github/workflows/backend.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build Docker image
+        run: docker build --no-cache -t ${{ secrets.DOCKER_USERNAME }}/backendDeployhub:latest ./prototype/backend
+
+      - name: DockerHub login
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+
+      - name: Push image
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/backendDeployhub:latest
+
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            # Secure docker login
+            echo "${{ secrets.DOCKER_ACCESS_TOKEN }}" | docker login \
+              -u "${{ secrets.DOCKER_USERNAME }}" \
+              --password-stdin
+
+            # Pull latest image
+            docker pull ${{ secrets.DOCKER_USERNAME }}/backendDeployhub:latest
+
+            # Stop & remove old container
+            docker stop apideployhub || true
+            docker rm apideployhub || true
+
+            # Run new container
+            docker run -d --name apideployhub \
+              --restart always \
+              --network cloud \
+              -v /var/run/docker.sock:/var/run/docker.sock
+              -p 127.0.0.1:3003:5000 \
+              -e NODE_ENV=${{ secrets.NODE_ENV }} \
+              -e PRODUCTIONDB_URI=${{ secrets.PRODUCTIONDB_URI }} \
+              -e DEVELOPMENTDB_URI=${{ secrets.DEVELOPMENTDB_URI }} \
+              -e PORT=${{ secrets.PORT }} \
+              -e ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }} \
+              -e ACCESS_TOKEN_EXPIRY=${{ secrets.ACCESS_TOKEN_EXPIRY }} \
+              -e REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }} \
+              -e REFRESH_TOKEN_EXPIRY=${{ secrets.REFRESH_TOKEN_EXPIRY }} \
+              -e EMAIL_PASS=${{ secrets.EMAIL_PASS }} \
+              -e EMAIL_USER=${{ secrets.EMAIL_USER }} \
+              -e EMAIL_HOST=${{ secrets.EMAIL_HOST }} \
+              -e GITHUB_TOKEN=${{ secrets.TOKEN_GITHUB }} \
+              -e GITHUB_WEBHOOK_SECRET=${{ secrets.WEBHOOK_SECRET_GITHUB }} \
+              -e GITHUB_CLIENT_ID=${{ secrets.CLIENT_ID_GITHUB }} \
+              -e GITHUB_CLIENT_SECRET=${{ secrets.CLIENT_SECRET_GITHUB }} \
+              -e FRONTEND_URL=${{ secrets.FRONTEND_URL }} \
+              -e KEY_ID=${{ secrets.KEY_ID }} \
+              -e KEY_SECRET=${{ secrets.KEY_SECRET }} \
+              -e DEVLOAD_PROJECT_ID=${{ secrets.DEVLOAD_PROJECT_ID }} \
+              -e DEVLOAD_API_KEY=${{ secrets.DEVLOAD_API_KEY }} \
+              ${{ secrets.DOCKER_USERNAME }}/backendDeployhub:latest

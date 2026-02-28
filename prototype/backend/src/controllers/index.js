@@ -1,0 +1,46 @@
+import { githubCallback } from "./slices/Auth/githubCallback.js";
+import { githubLogin } from "./slices/Auth/githubLogin.js";
+import { initRegistration } from "./slices/Auth/initRegister.controller.js";
+import { Login } from "./slices/Auth/Login.controller.js";
+import { Logout } from "./slices/Auth/Logout.Controller.js";
+import { RefreshToken } from "./slices/Auth/RefreshToken.Controller.js";
+import { verifyRegister } from "./slices/Auth/verifyRegister.controller.js";
+import { createDeployment } from "./slices/deployment/createDeployment.controller.js";
+import reDeployment from "./slices/deployment/reDeployment.controller.js";
+import { initPayment } from "./slices/Payments/init.controller.js";
+import { paymentVerify } from "./slices/Payments/verify.controller.js";
+import { initVerify, verify } from "./slices/Payments/verifyUser.js";
+import { fullName } from "./slices/user/fullName.controller.js";
+import { Invoice } from "./slices/user/invoices.js";
+import { me } from "./slices/user/me.controller.js";
+import { ProfileChange } from "./slices/user/profile.controller.js";
+
+export const contollers = {
+    Auth: {
+        Register: {
+            init: initRegistration,
+            verify: verifyRegister
+        },
+        Login,
+        RefreshToken,
+        Logout,
+        githubLogin,
+        githubCallback
+    },
+    Deployment: {
+        createDeployment,
+        reDeployment
+    },
+    user: {
+        me,
+        initVerify,
+        verify,
+        Invoice,
+        profilePic: ProfileChange,
+        fullName
+    },
+    subscription: {
+        init: initPayment,
+        verfy: paymentVerify
+    }
+}
