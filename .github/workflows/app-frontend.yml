@@ -58,7 +58,6 @@ jobs:
                       docker run -d --name appdeployhub \
                       --network cloud \
                       --restart always \
-                      --network cloud \
                       -e VITE_RAZORPAY_KEY_ID="${{ secrets.VITE_RAZORPAY_KEY_ID }}" \
                        ${{ secrets.DOCKER_USERNAME }}/deployhub-app-frontend:latest
 
