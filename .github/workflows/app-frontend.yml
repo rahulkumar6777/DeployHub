@@ -1,0 +1,65 @@
+name: App-Frontend CI/CD
+
+on:
+    push:
+        branches:
+            - main
+        paths:
+            - "protoptype/app-frontend/**"
+            - ".github/workflows/app-frontend.yml"
+
+jobs:
+    # ---- Build job ----
+    build:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+
+            - name: Set up Node (for any pre-build steps if needed)
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20"
+
+            - name: Build Docker image
+              run: |
+                docker build \
+                  --build-arg VITE_RAZORPAY_KEY_ID="${{ secrets.VITE_RAZORPAY_KEY_ID }}" \
+                  -t ${{ secrets.DOCKER_USERNAME }}/deployhub-app-frontend:latest \
+                  .protoptype/app-frontend
+
+
+            - name: DockerHub login (access token)
+              uses: docker/login-action@v2
+              with:
+                  username: ${{ secrets.DOCKER_USERNAME }}
+                  password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+
+            - name: Push image
+              run: docker push ${{ secrets.DOCKER_USERNAME }}/deployhub-app-frontend:latest
+
+    # ---- Deploy job ----
+    deploy:
+        runs-on: ubuntu-latest
+        needs: build
+
+        steps:
+            - name: Deploy via SSH
+              uses: appleboy/ssh-action@v0.1.10
+              with:
+                  host: ${{ secrets.SERVER_HOST }}
+                  username: ${{ secrets.SERVER_USER }}
+                  key: ${{ secrets.SERVER_SSH_KEY }}
+                  script: |
+                      echo "${{ secrets.DOCKER_ACCESS_TOKEN }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+                      docker pull ${{ secrets.DOCKER_USERNAME }}/deployhub-app-frontend:latest
+                      docker stop appdeployhub || true
+                      docker rm appdeployhub || true
+                      docker run -d --name appdeployhub \
+                      --network cloud \
+                      --restart always \
+                      --network cloud \
+                      -e VITE_RAZORPAY_KEY_ID="${{ secrets.VITE_RAZORPAY_KEY_ID }}" \
+                       ${{ secrets.DOCKER_USERNAME }}/deployhub-app-frontend:latest
+
