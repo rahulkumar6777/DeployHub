@@ -5,7 +5,7 @@ on:
         branches:
             - main
         paths:
-            - "protoptype/app-frontend/**"
+            - "prototype/app-frontend/**"
             - ".github/workflows/app-frontend.yml"
 
 jobs:
