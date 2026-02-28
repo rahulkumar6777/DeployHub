@@ -21,29 +21,36 @@ export const AuthProvider = ({ children }) => {
 
   const navigate = useNavigate();
   const refreshTimer = useRef(null);
+  const accessTokenRef = useRef(null);
+
+  // Keep ref updated
+  useEffect(() => {
+    accessTokenRef.current = accessToken;
+  }, [accessToken]);
 
   /* ================================
-      Fetch user profile (/me)
-     ================================ */
+      Fetch user profile
+  ================================= */
   const fetchUser = useCallback(async () => {
     try {
       const res = await api.get("/me");
       setUser(res.data.data);
-    } catch (err) {
-      console.error("User fetch failed");
+    } catch {
       setUser(null);
     }
   }, []);
 
   /* ================================
-      Schedule auto token refresh
-     ================================ */
+      Schedule auto refresh
+  ================================= */
   const scheduleRefresh = (token) => {
     try {
       const { exp } = jwtDecode(token);
       const delay = exp * 1000 - Date.now() - 5 * 60 * 1000;
 
-      if (refreshTimer.current) clearTimeout(refreshTimer.current);
+      if (refreshTimer.current) {
+        clearTimeout(refreshTimer.current);
+      }
 
       refreshTimer.current = setTimeout(() => {
         refreshAccessToken();
@@ -52,8 +59,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   /* ================================
-      Refresh access token (cookie)
-     ================================ */
+      Refresh access token
+  ================================= */
   const refreshAccessToken = useCallback(async () => {
     try {
       const res = await api.get("/refresh/refreshtoken");
@@ -62,8 +69,7 @@ export const AuthProvider = ({ children }) => {
 
       setAccessToken(token);
       scheduleRefresh(token);
-
-      await fetchUser();   // 🔥 get fresh user data
+      await fetchUser();
 
       return token;
     } catch {
@@ -74,7 +80,7 @@ export const AuthProvider = ({ children }) => {
 
   /* ================================
       Login
-     ================================ */
+  ================================= */
   const login = async (email, password) => {
     const res = await api.post("/login", { email, password });
     const token = res.data?.accessToken;
@@ -82,7 +88,6 @@ export const AuthProvider = ({ children }) => {
 
     setAccessToken(token);
     scheduleRefresh(token);
-
     await fetchUser();
 
     localStorage.setItem("auth_event", "login");
@@ -91,10 +96,10 @@ export const AuthProvider = ({ children }) => {
 
   /* ================================
       Logout
-     ================================ */
+  ================================= */
   const logout = async (redirect = true) => {
     try {
-      await api.post("/logout");   // clear refresh cookie
+      await api.post("/logout");
     } catch {}
 
     setAccessToken(null);
@@ -107,57 +112,62 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("auth_event", "logout");
 
     if (redirect) {
-      window.location.href = "/login";
+      navigate("/login", { replace: true });
     }
   };
 
   /* ================================
       Initial auth check
-     ================================ */
-  const checkAuth = async () => {
-    await refreshAccessToken();
-    setIsAuthReady(true);
-  };
-
+  ================================= */
   useEffect(() => {
-    checkAuth();
+    const init = async () => {
+      try {
+        await refreshAccessToken();
+      } finally {
+        setIsAuthReady(true);
+      }
+    };
+    init();
   }, []);
 
   /* ================================
-      Attach axios interceptors
-     ================================ */
+      Attach interceptors ONCE
+  ================================= */
   useEffect(() => {
-    attachInterceptors(
-      () => accessToken,
+    const eject = attachInterceptors(
+      () => accessTokenRef.current,
       refreshAccessToken,
       logout
     );
-  }, [accessToken, refreshAccessToken]);
+
+    return eject;
+  }, [refreshAccessToken]);
 
   /* ================================
       Multi-tab sync
-     ================================ */
+  ================================= */
   useEffect(() => {
     const sync = (e) => {
       if (e.key !== "auth_event") return;
       if (e.newValue === "logout") logout(false);
-      if (e.newValue === "login") checkAuth();
+      if (e.newValue === "login") refreshAccessToken();
     };
+
     window.addEventListener("storage", sync);
     return () => window.removeEventListener("storage", sync);
-  }, []);
+  }, [refreshAccessToken]);
 
   return (
     <AuthContext.Provider
       value={{
         isAuthenticated: !!accessToken,
         isAuthReady,
-        user,               // 🔥 use anywhere
+        user,
         login,
         logout,
         refreshAccessToken,
         api,
-        fetchUser                // authenticated axios
+        fetchUser,
       }}
     >
       {children}

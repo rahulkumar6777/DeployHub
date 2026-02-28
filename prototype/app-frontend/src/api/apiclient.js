@@ -20,21 +20,41 @@ function notify(token) {
   refreshSubscribers = [];
 }
 
-export const attachInterceptors = (getToken, refreshToken, logout) => {
-  api.interceptors.request.use((config) => {
-    const token = getToken();
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  });
+export const attachInterceptors = (
+  getToken,
+  refreshToken,
+  logout
+) => {
+  const requestInterceptor = api.interceptors.request.use(
+    (config) => {
+      const token = getToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    }
+  );
 
-  api.interceptors.response.use(
+  const responseInterceptor = api.interceptors.response.use(
     (res) => res,
     async (error) => {
       const original = error.config;
 
-      if (error.response?.status !== 401 || original._retry) {
+      if (!error.response) {
         return Promise.reject(error);
       }
+
+      // ❌ Never retry refresh endpoint
+      if (original.url.includes("/refresh")) {
+        logout(false);
+        return Promise.reject(error);
+      }
+
+      if (error.response.status !== 401 || original._retry) {
+        return Promise.reject(error);
+      }
+
+      original._retry = true;
 
       if (isRefreshing) {
         return new Promise((resolve) => {
@@ -45,7 +65,6 @@ export const attachInterceptors = (getToken, refreshToken, logout) => {
         });
       }
 
-      original._retry = true;
       isRefreshing = true;
 
       try {
@@ -56,11 +75,17 @@ export const attachInterceptors = (getToken, refreshToken, logout) => {
         original.headers.Authorization = `Bearer ${newToken}`;
         return api(original);
       } catch {
-        logout();
+        logout(false);
         return Promise.reject(error);
       } finally {
         isRefreshing = false;
       }
     }
   );
+
+  // Return eject function
+  return () => {
+    api.interceptors.request.eject(requestInterceptor);
+    api.interceptors.response.eject(responseInterceptor);
+  };
 };
