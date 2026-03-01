@@ -10,6 +10,7 @@ import Routes from './src/routes/user.routes.js'
 import './src/workers/buildworker.js'
 import './src/workers/deployworker.js'
 import './src/workers/reDeploy.worker.js'
+import './src/workers/Requestcountworker.js'
 
 app.use('/api', Routes)
 
