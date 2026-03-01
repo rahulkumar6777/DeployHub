@@ -66,6 +66,8 @@ jobs:
               -p 127.0.0.1:3003:5000 \
               -e NODE_ENV=${{ secrets.NODE_ENV }} \
               -e PRODUCTIONDB_URI=${{ secrets.PRODUCTIONDB_URI }} \
+              -e DOCKER_PASSWORD=${{ secrets.DOCKER_ACCESS_TOKEN }} \
+              -e DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }} \
               -e DEVELOPMENTDB_URI=${{ secrets.DEVELOPMENTDB_URI }} \
               -e PORT=${{ secrets.PORT }} \
               -e ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }} \
