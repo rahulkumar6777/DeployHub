@@ -190,6 +190,7 @@ const createDeployment = async (req, res) => {
         // add allocation data to redis cache
         await redisclient.hset(`subdomain:${allocation.subdomain}`, {
             port: allocation.port,
+            projectId: newProject._id.toString()
         })
 
         buildqueue.add("buildqueue", { buildId: newBuild._id.toString(), projectId: newProject._id.toString() })
