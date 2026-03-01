@@ -138,11 +138,12 @@ const createDeployment = async (req, res) => {
             projectinternalPort = 80
         }
 
-        projectinternalPort = port
+        
 
         if (projectType === 'node') {
             newProject.startCommand = startCommand
-            newProject.port = projectinternalPort
+            newProject.port = port
+            projectinternalPort = port
         }
 
         const newBuild = new Model.Build({
