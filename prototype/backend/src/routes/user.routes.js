@@ -24,6 +24,8 @@ router.post('/me/init', verifyJWT, contollers.user.initVerify);
 router.post('/me/verify', verifyJWT, contollers.user.verify);
 router.get('/invoice' , verifyJWT , contollers.user.Invoice);
 router.get('/user/gitrepos' , verifyJWT , contollers.user.getUserRepos)
+router.get('/projects' , verifyJWT , contollers.user.getUserProjects)
+
 
 // deployment routes
 router.route('/deployment').post(verifyJWT, contollers.Deployment.createDeployment);

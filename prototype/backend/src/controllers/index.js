@@ -6,6 +6,7 @@ import { Logout } from "./slices/Auth/Logout.Controller.js";
 import { RefreshToken } from "./slices/Auth/RefreshToken.Controller.js";
 import { verifyRegister } from "./slices/Auth/verifyRegister.controller.js";
 import { createDeployment } from "./slices/deployment/createDeployment.controller.js";
+import { getUserProjects } from "./slices/deployment/getUserProjects.js";
 import reDeployment from "./slices/deployment/reDeployment.controller.js";
 import { getUserRepos } from "./slices/git/getUserRepo.controller.js";
 import { initPayment } from "./slices/Payments/init.controller.js";
@@ -39,7 +40,8 @@ export const contollers = {
         Invoice,
         profilePic: ProfileChange,
         fullName,
-        getUserRepos
+        getUserRepos,
+        getUserProjects
     },
     subscription: {
         init: initPayment,

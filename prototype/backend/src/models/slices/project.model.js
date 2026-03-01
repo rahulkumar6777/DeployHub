@@ -68,6 +68,9 @@ const projectSchema = new mongoose.Schema({
     customDomain: {
         type: String
     },
+    subdomain: {
+        type: String
+    },
     totalRequest: {
         type: Number,
         default: 0

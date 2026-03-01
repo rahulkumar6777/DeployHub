@@ -176,6 +176,7 @@ const createDeployment = async (req, res) => {
         console.log(allocation)
 
         newProject.buildId = newBuild._id;
+        newProject.subdomain = allocation.subdomain
 
         if (env) {
             for (const [key, value] of Object.entries(env)) {

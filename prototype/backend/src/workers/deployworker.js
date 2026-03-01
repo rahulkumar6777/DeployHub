@@ -39,6 +39,10 @@ const worker = new Worker("deploymentQueue", async (job) => {
                 Image: imageName,
                 name: `${bindingData.subdomain}`,
                 Env: envVariables,
+                HostConfig: {
+                    NetworkMode: "users"
+                }
+
             });
 
             await container.start();
@@ -55,7 +59,7 @@ const worker = new Worker("deploymentQueue", async (job) => {
             console.log(bindingData.port)
             console.log(imageName)
 
-            const containerPort = projectData.port.toString() + "/tcp";
+
 
             const envVariables = [];
             if (projectData.env) {
@@ -68,6 +72,9 @@ const worker = new Worker("deploymentQueue", async (job) => {
                 Image: imageName,
                 name: `${bindingData.subdomain}`,
                 Env: envVariables,
+                HostConfig: {
+                    NetworkMode: "users"
+                }
             });
 
             await container.start();
