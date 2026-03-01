@@ -12,10 +12,12 @@ import { getUserRepos } from "./slices/git/getUserRepo.controller.js";
 import { initPayment } from "./slices/Payments/init.controller.js";
 import { paymentVerify } from "./slices/Payments/verify.controller.js";
 import { initVerify, verify } from "./slices/Payments/verifyUser.js";
+import { getDashboardStats } from "./slices/user/dashboard.js";
 import { fullName } from "./slices/user/fullName.controller.js";
 import { Invoice } from "./slices/user/invoices.js";
 import { me } from "./slices/user/me.controller.js";
 import { ProfileChange } from "./slices/user/profile.controller.js";
+import { getUsageStats } from "./slices/user/usage.js";
 
 export const contollers = {
     Auth: {
@@ -41,7 +43,9 @@ export const contollers = {
         profilePic: ProfileChange,
         fullName,
         getUserRepos,
-        getUserProjects
+        getUserProjects,
+        getDashboardStats,
+        getUsageStats
     },
     subscription: {
         init: initPayment,

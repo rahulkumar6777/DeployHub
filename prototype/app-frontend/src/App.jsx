@@ -58,8 +58,8 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/usage" element={<Usage />} />
-        <Route path="/billing" element={<Billing />} />
-        <Route path="/billing/upgrade" element={<Upgrade />} />
+        {/* <Route path="/billing" element={<Billing />} />
+        <Route path="/billing/upgrade" element={<Upgrade />} /> */}
         <Route path="/profile" element={<Profile/>} />
         <Route path="/:type/new" element={<NewDeployment/>} />
       </Route>
