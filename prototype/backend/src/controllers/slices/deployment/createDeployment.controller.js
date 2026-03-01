@@ -172,6 +172,7 @@ const createDeployment = async (req, res) => {
         };
 
         const allocation = await generateUniqueName(name);
+        console.log(allocation)
 
         newProject.buildId = newBuild._id;
 
