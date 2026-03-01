@@ -62,22 +62,25 @@ const paymentVerify = async (req, res) => {
 
       const payment = await Model.CompletedOrder.create({
         userid: orderfromdb.userid,
-        oderid: orderfromdb.oderid,
+        orderid: orderfromdb.oderid,
         months: orderfromdb.months,
         amount: orderfromdb.amount,
         plan: orderfromdb.plan,
         status: "completed",
       });
 
-      await Model.Subscription.findOneAndUpdate(
-        { userId: req.user._id },
-        {
-          plan: "pro",
-          startDate: now,
-          endDate: subscriptionend,
-          paymentId: payment._id,
-        },
-      );
+
+      const project = new Model.Project({
+        paymentId: payment._id,
+        plan: payment.plan,
+        startDate: now,
+        endDate: subscriptionend,
+        owner: req.user._id
+      })
+
+      payment.projectid = project._id
+      await payment.save({validateBeforeSave: false})
+      await project.save({validateBeforeSave: false})
       orderfromdb.status = "completed";
       await orderfromdb.save({ validateBeforeSave: false });
 
@@ -117,6 +120,7 @@ const paymentVerify = async (req, res) => {
       return res.json({
         success: true,
         userSubscribe: user.subscription,
+        projectId: project._id,
         message: "Payment verified successfully!",
       });
     } else {

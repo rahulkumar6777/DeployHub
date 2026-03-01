@@ -7,6 +7,7 @@ import { RefreshToken } from "./slices/Auth/RefreshToken.Controller.js";
 import { verifyRegister } from "./slices/Auth/verifyRegister.controller.js";
 import { createDeployment } from "./slices/deployment/createDeployment.controller.js";
 import reDeployment from "./slices/deployment/reDeployment.controller.js";
+import { getUserRepos } from "./slices/git/getUserRepo.controller.js";
 import { initPayment } from "./slices/Payments/init.controller.js";
 import { paymentVerify } from "./slices/Payments/verify.controller.js";
 import { initVerify, verify } from "./slices/Payments/verifyUser.js";
@@ -37,7 +38,8 @@ export const contollers = {
         verify,
         Invoice,
         profilePic: ProfileChange,
-        fullName
+        fullName,
+        getUserRepos
     },
     subscription: {
         init: initPayment,

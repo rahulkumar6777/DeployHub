@@ -37,17 +37,13 @@ const userschema = new mongoose.Schema({
     refreshtoken: {
         type: String
     },
-    subscriptionid: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Subscription",
-    },
     verified: {
         type: Boolean,
         default: false
     },
     verifiedAt: {
         type: Date
-    }
+    },
 },{
     timestamps: true
 })

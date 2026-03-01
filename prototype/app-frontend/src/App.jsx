@@ -13,6 +13,7 @@ import { Upgrade } from "./pages/Upgrade";
 import MinimalLayout from "./layouts/MinimalLayout";
 import Billing from "./pages/Billing";
 import Profile from "./pages/Profile";
+import NewDeployment from "./pages/NewDeployment";
 
 function Protected({ children }) {
   const { isAuthenticated, isAuthReady } = useAuth();
@@ -60,6 +61,7 @@ export default function App() {
         <Route path="/billing" element={<Billing />} />
         <Route path="/billing/upgrade" element={<Upgrade />} />
         <Route path="/profile" element={<Profile/>} />
+        <Route path="/:type/new" element={<NewDeployment/>} />
       </Route>
 
       <Route

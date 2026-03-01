@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 const DUMMY_PROJECTS = [
-  { id: '1', name: 'my-portfolio',  type: 'static', status: 'live',    url: 'my-portfolio.deployhub.app',  requests: 847,  ram: 128, cpu: 0.02, uptime: '99.9%', deployedAt: '2 hours ago', createdAt: 'Jan 12, 2025' },
-  { id: '2', name: 'node-backend',  type: 'nodejs', status: 'live',    url: 'node-backend.deployhub.app',  requests: 1203, ram: 256, cpu: 0.05, uptime: '99.7%', deployedAt: '1 day ago',   createdAt: 'Jan 8, 2025' },
-  { id: '3', name: 'test-site',     type: 'static', status: 'stopped', url: 'test-site.deployhub.app',     requests: 0,    ram: 0,   cpu: 0,    uptime: '—',     deployedAt: '3 days ago',  createdAt: 'Dec 28, 2024' },
+  { id: '1', name: 'my-portfolio',  type: 'static', status: 'live',    url: 'my-portfolio.nesthost.app',  requests: 847,  ram: 128, cpu: 0.02, uptime: '99.9%', deployedAt: '2 hours ago', createdAt: 'Jan 12, 2025' },
+  { id: '2', name: 'node-backend',  type: 'nodejs', status: 'live',    url: 'node-backend.nesthost.app',  requests: 1203, ram: 256, cpu: 0.05, uptime: '99.7%', deployedAt: '1 day ago',   createdAt: 'Jan 8, 2025' },
+  { id: '3', name: 'test-site',     type: 'static', status: 'stopped', url: 'test-site.nesthost.app',     requests: 0,    ram: 0,   cpu: 0,    uptime: '—',     deployedAt: '3 days ago',  createdAt: 'Dec 28, 2024' },
 ]
 
 const STATUS = {
@@ -165,8 +165,10 @@ function EmptyState() {
 }
 
 export function Projects() {
+  const navigate = useNavigate()
   const [filter, setFilter] = useState('all')
   const [sort,   setSort]   = useState('recent')
+  const [showTypeSelector, setShowTypeSelector] = useState(false)
 
   const liveCount    = DUMMY_PROJECTS.filter(p => p.status === 'live').length
   const stoppedCount = DUMMY_PROJECTS.filter(p => p.status === 'stopped').length
@@ -188,13 +190,55 @@ export function Projects() {
             {' · '}{stoppedCount} stopped · {DUMMY_PROJECTS.length} total
           </p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm text-black flex-shrink-0 transition-all hover:scale-105 active:scale-95"
-          style={{ background: 'linear-gradient(135deg, #00e5ff, #00b8cc)', boxShadow: '0 4px 20px rgba(0,229,255,0.25)' }}>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-          </svg>
-          New Project
-        </button>
+        <div className="relative flex-shrink-0">
+          <button onClick={() => setShowTypeSelector(p => !p)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm text-black transition-all hover:scale-105 active:scale-95"
+            style={{ background: 'linear-gradient(135deg, #00e5ff, #00b8cc)', boxShadow: '0 4px 20px rgba(0,229,255,0.25)' }}>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+            </svg>
+            New Project
+          </button>
+
+          {showTypeSelector && (
+            <>
+              <div className="fixed inset-0 z-20" onClick={() => setShowTypeSelector(false)} />
+              <div className="absolute right-0 top-11 w-52 rounded-2xl overflow-hidden z-30 shadow-2xl"
+                style={{ background: '#080c12', border: '1px solid rgba(255,255,255,0.09)' }}>
+                <div className="h-px" style={{ background: 'linear-gradient(90deg, transparent, #00e5ff, transparent)' }} />
+                <div className="p-1.5">
+                  {[
+                    { key: 'static', label: 'Static Site', desc: 'React, Vue, HTML/CSS', icon: (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    )},
+                    { key: 'node', label: 'Node.js', desc: 'Express, Fastify, any Node app', icon: (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2" />
+                      </svg>
+                    )},
+                  ].map(t => (
+                    <button key={t.key} onClick={() => { setShowTypeSelector(false); navigate(`/${t.key}/new`) }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all"
+                      style={{ color: '#9ca3af' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = '#fff' }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#9ca3af' }}>
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ background: 'rgba(0,229,255,0.08)', color: '#00e5ff' }}>
+                        {t.icon}
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold leading-none mb-0.5">{t.label}</div>
+                        <div className="text-[10px]" style={{ color: '#374151' }}>{t.desc}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Filter bar */}

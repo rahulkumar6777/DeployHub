@@ -39,15 +39,6 @@ const worker = new Worker("deploymentQueue", async (job) => {
                 Image: imageName,
                 name: `${bindingData.subdomain}`,
                 Env: envVariables,
-                HostConfig: {
-                    PortBindings: {
-                        "80/tcp": [
-                            {
-                                HostPort: bindingData.port,
-                            },
-                        ],
-                    },
-                },
             });
 
             await container.start();
@@ -77,13 +68,6 @@ const worker = new Worker("deploymentQueue", async (job) => {
                 Image: imageName,
                 name: `${bindingData.subdomain}`,
                 Env: envVariables,
-                HostConfig: {
-                    PortBindings: {
-                        [containerPort]: [
-                            { HostPort: bindingData.port.toString() },
-                        ],
-                    },
-                },
             });
 
             await container.start();
@@ -105,45 +89,58 @@ const worker = new Worker("deploymentQueue", async (job) => {
 }, { connection: connection });
 
 worker.on("completed", async (job) => {
-    console.log(`Deployment job ${job.id} completed successfully.`);
 
     const { projectId } = job.data;
 
-    const projectData = await Model.Project.findById(projectId).lean();
-    const repoLinkWithoutGit = projectData.repoLink.endsWith('.git')
-        ? projectData.repoLink.slice(0, -4)
-        : projectData.repoLink;
-    const parts = repoLinkWithoutGit.split('/');
-    const owner = parts[3];
-    const repo = parts[4].replace(/\.git$/, '');
+    const projectData = await Model.Project.findById(projectId).populate('owner');
+    const usergithubAccessToken = projectData.owner?.githubAccessToken;
+    projectData.status = 'live';
+    await projectData.save({ validateBeforeSave: false })
 
-    const result = await fetch(
-        `https://api.github.com/repos/${owner}/${repo}/hooks`,
-        {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-                Accept: "application/vnd.github+json"
-            },
-            body: JSON.stringify({
-                name: "web",
-                active: true,
-                events: ["push"],
-                config: {
-                    url: "https://b960-103-211-132-79.ngrok-free.app/github-webhook",
-                    content_type: "json",
-                    secret: process.env.GITHUB_WEBHOOK_SECRET
-                }
-            })
-        }
+    if (usergithubAccessToken) {
+        const repoLinkWithoutGit = projectData.repoLink.endsWith('.git')
+            ? projectData.repoLink.slice(0, -4)
+            : projectData.repoLink;
+        const parts = repoLinkWithoutGit.split('/');
+        const owner = parts[3];
+        const repo = parts[4].replace(/\.git$/, '');
+
+        const result = await fetch(
+            `https://api.github.com/repos/${owner}/${repo}/hooks`,
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${usergithubAccessToken}`,
+                    Accept: "application/vnd.github+json"
+                },
+                body: JSON.stringify({
+                    name: "web",
+                    active: true,
+                    events: ["push"],
+                    config: {
+                        url: "https://b960-103-211-132-79.ngrok-free.app/github-webhook",
+                        content_type: "json",
+                        secret: process.env.GITHUB_WEBHOOK_SECRET
+                    }
+                })
+            }
 
 
-    );
+        );
 
-    console.log("Webhook setup response:", result.status, await result.text())
+        console.log("Webhook setup response:", result.status, await result.text())
+    }
+
+    console.log(`Deployment job ${job.id} completed successfully.`);
 });
 
 worker.on("failed", async (job, err) => {
+
+    const { projectId } = job.data;
+
+    const projectData = await Model.Project.findById(projectId);
+    projectData.status = 'failed-deploy';
+    await projectData.save({ validateBeforeSave: false })
     console.log(`Deployment job ${job.id} failed with error: ${err.message}`);
 
     await Model.deploymentModel.findOneAndUpdate({ build: job.data.buildId }, { status: 'failed', deployedAt: new Date() }, { validateBeforeSave: false });

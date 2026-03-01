@@ -1,10 +1,16 @@
 import { body, validationResult } from "express-validator";
 import { Model } from '../../../models/index.js';
 import { buildqueue } from "../../../utils/queues.js";
-import { AllocatePortandSubdomain } from "../../../utils/allocation.js";
 import { redisclient } from "../../../configs/redis.js";
+import mongoose from "mongoose";
+
 
 const createDeploymentValidate = [
+    body("projectId")
+        .notEmpty()
+        .withMessage("projectId is required")
+        .custom((value) => mongoose.Types.ObjectId.isValid(value))
+        .withMessage("projectId is not valid"),
     body("name")
         .notEmpty()
         .withMessage("Project name is required"),
@@ -63,8 +69,30 @@ const createDeployment = async (req, res) => {
         }
 
         const user = req.user;
-        const { name, codeLink, projectType, env, buildCommand, publishDir, startCommand, port, type, branchname, isFolder, folderName } = req.body
+        const { projectId, name, codeLink, projectType, env, buildCommand, publishDir, startCommand, port, type, branchname, isFolder, folderName } = req.body;
+        let projectinternalPort;
+
+        const newProject = await Model.Project.findById(projectId).populate("paymentId")
+        if (!newProject) {
+            return res.status(400).json({
+                message: "Invalid ProjectId"
+            })
+        }
+
+        // check ownership
+        if (newProject.owner.toString() !== user._id.toString()) {
+            return res.status(403).json({
+                message: "You are not authorized to deploy this project"
+            });
+        }
+
+        if (newProject.status !== 'pending') {
+            return res.status(400).json({ message: "reconfig not" });
+        }
+
         let commitSha = null;
+
+
 
         // Extract owner and repo from codeLink
         const repoLinkWithoutGit = codeLink.endsWith('.git')
@@ -93,31 +121,28 @@ const createDeployment = async (req, res) => {
             console.log("Commit fetch failed, continuing without commit check");
         }
 
+        newProject.name = name;
+        newProject.repoLink = codeLink;
+        newProject.projectType = projectType
+        newProject.env = env
+        newProject.settings.repoBranchName = branchname
+        newProject.settings.folder.enabled = isFolder
+        newProject.settings.folder.name = isFolder ? folderName : undefined
+        newProject.totalBuilds += 1
 
-        const newProject = new Model.Project({
-            name,
-            owner: user._id,
-            repoLink: codeLink,
-            projectType,
-            env: env,
-            settings: {
-                repoBranchName: branchname,
-                folder: {
-                    enabled: isFolder,
-                    name: isFolder ? folderName : undefined
-                }
-            },
-            totalBuilds: +1
-        })
+        await newProject.save({ validateBeforeSave: false })
 
         if (projectType === 'static') {
             newProject.buildCommand = buildCommand,
                 newProject.publishDir = publishDir
+            projectinternalPort = 80
         }
+
+        projectinternalPort = port
 
         if (projectType === 'node') {
             newProject.startCommand = startCommand
-            newProject.port = port
+            newProject.port = projectinternalPort
         }
 
         const newBuild = new Model.Build({
@@ -126,19 +151,26 @@ const createDeployment = async (req, res) => {
         })
 
         const generateUniqueName = async (name) => {
-            while (true) {
+            let attempts = 0;
+            while (attempts < 20) { 
                 const uniqueName = Math.random().toString(36).substring(2, 8);
                 const subdomain = `${name.toLowerCase()}-${uniqueName}`;
 
-
-                const existingBinding = await Model.Binding.findOne({ subdomain });
-                if (!existingBinding) {
-                    return subdomain;
+                const existingDomain = await Model.Binding.findOne({ subdomain });
+                if (!existingDomain) {
+                    const binding = new Model.Binding({
+                        project: projectId,
+                        subdomain: subdomain,
+                    });
+                    await binding.save({ validateBeforeSave: false });
+                    return binding;
                 }
+                attempts++;
             }
+            throw new Error("Could not generate unique subdomain after 20 attempts");
         };
 
-        const allocation = await AllocatePortandSubdomain(newProject._id, await generateUniqueName(name));
+        const allocation = await generateUniqueName(name);
 
         newProject.buildId = newBuild._id;
 
@@ -154,8 +186,6 @@ const createDeployment = async (req, res) => {
         // add allocation data to redis cache
         await redisclient.hset(`subdomain:${allocation.subdomain}`, {
             port: allocation.port,
-            subdomain: allocation.subdomain,
-            url: allocation.url
         })
 
         buildqueue.add("buildqueue", { buildId: newBuild._id.toString(), projectId: newProject._id.toString() })

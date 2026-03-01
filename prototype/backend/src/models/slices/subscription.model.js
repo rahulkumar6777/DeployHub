@@ -7,19 +7,11 @@ const subscriptionschema = new mongoose.Schema({
         required: true,
         index: true
     },
-    plan: {
-        type: String,
-        enum: ["free", "pro"],
-        default: "free"
-    },
-    startDate: {
-        type: Date
-    },
-    endDate: {
-        type: Date
-    },
-    paymentId: {
-        type: String
+    prijectId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Project",
+        required: true,
+        index: true
     }
 }, { timestamps: true })
 

@@ -34,13 +34,9 @@ export default function Sidebar() {
   const close = () => setIsSidebarOpen(false)
 
   // Real user data from backend — declare before use
-  const fullname      = user?.fullname || 'Account'
-  const plan          = user?.subscriptionid?.plan || 'free'
-  const profilePic    = user?.profilePic || ''
-  const initials      = fullname.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
-  const requestsUsed  = user?.subscriptionid?.requestsUsed || 0
-  const requestsLimit = plan === 'pro' ? 100000 : plan === 'team' ? 500000 : 2000
-  const reqPct        = Math.min(Math.round((requestsUsed / requestsLimit) * 100), 100)
+  const fullname   = user?.fullname || 'Account'
+  const profilePic = user?.profilePic || ''
+  const initials   = fullname.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
 
   return (
     <>
@@ -66,7 +62,7 @@ export default function Sidebar() {
           </div>
           <div>
             <div className="font-syne font-black text-[15px] tracking-tight leading-none">
-              Deploy<span style={{ color: '#00e5ff' }}>Hub</span>
+              Nest<span style={{ color: '#00e5ff' }}>Host</span>
             </div>
             <div className="text-[9px] tracking-[0.18em] uppercase mt-0.5" style={{ color: '#374151' }}>
               Web Hosting
@@ -129,28 +125,6 @@ export default function Sidebar() {
           </div>
         </nav>
 
-        {/* Plan badge */}
-        <div className="mx-3 mb-3 p-3.5 rounded-xl" style={{ background: 'rgba(0,229,255,0.03)', border: '1px solid rgba(0,229,255,0.08)' }}>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold capitalize" style={{ color: '#e5e7eb' }}>{plan} Plan</span>
-            {plan === 'free' && (
-              <Link to="/billing" onClick={close} className="text-[10px] font-black transition-colors" style={{ color: '#00e5ff' }}>
-                Upgrade →
-              </Link>
-            )}
-          </div>
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[10px]" style={{ color: '#374151' }}>Requests</span>
-            <span className="text-[10px]" style={{ color: reqPct >= 80 ? '#f59e0b' : '#374151' }}>
-              {requestsUsed.toLocaleString()} / {requestsLimit.toLocaleString()}
-            </span>
-          </div>
-          <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
-            <div className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${reqPct}%`, background: reqPct >= 80 ? '#f59e0b' : 'linear-gradient(90deg, #00e5ff, #7c3aed)' }} />
-          </div>
-        </div>
-
         {/* User */}
         <div className="px-3 pb-4 space-y-1" style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '12px' }}>
           <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
@@ -165,7 +139,7 @@ export default function Sidebar() {
             )}
             <div className="flex-1 min-w-0">
               <div className="text-xs font-semibold text-white truncate">{fullname}</div>
-              <div className="text-[10px] capitalize truncate" style={{ color: '#374151' }}>{plan} plan</div>
+              <div className="text-[10px] truncate" style={{ color: '#374151' }}>{user?.email || ''}</div>
             </div>
           </div>
           <button onClick={logout}

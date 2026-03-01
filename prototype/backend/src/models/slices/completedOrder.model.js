@@ -6,7 +6,7 @@ const completedorderschema = new mongoose.Schema({
         ref: "User",
         required: true
     },
-    oderid: {
+    orderid: {
         type: String,
         required: true
     },
@@ -22,6 +22,10 @@ const completedorderschema = new mongoose.Schema({
     },
     status: {
         type: String,
+    },
+    projectid: {
+         type: mongoose.Schema.Types.ObjectId,
+        ref: "Project",
     }
 }, { timestamps: true})
 

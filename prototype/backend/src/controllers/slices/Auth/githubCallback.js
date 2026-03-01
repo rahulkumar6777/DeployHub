@@ -64,14 +64,6 @@ export const githubCallback = async (req, res) => {
                 password: null,
             });
 
-            const subscription = await Model.Subscription.create({
-                userId: user._id,
-                plan: 'free',
-            })
-
-
-            user.subscriptionid = subscription._id
-
             await user.save({validateBeforeSave: false})
         } else {
             // Update GitHub token

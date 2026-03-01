@@ -34,7 +34,6 @@ export default function TopNavbar() {
 
   // User data from backend structure
   const fullname   = user?.fullname || 'Account'
-  const plan       = user?.subscriptionid?.plan || 'free'
   const provider   = user?.provider || 'local'
   const profilePic = user?.profilePic || ''
   const initials   = fullname.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
@@ -97,10 +96,10 @@ export default function TopNavbar() {
               </div>
             )}
 
-            {/* Name + plan */}
+            {/* Name + email */}
             <div className="hidden sm:block text-left">
               <div className="text-xs font-semibold text-white leading-none">{fullname.split(' ')[0]}</div>
-              <div className="text-[10px] capitalize mt-0.5" style={{ color: '#374151' }}>{plan} plan</div>
+              <div className="text-[10px] mt-0.5" style={{ color: '#374151' }}>{user?.email || ''}</div>
             </div>
 
             {/* Chevron */}
@@ -128,10 +127,6 @@ export default function TopNavbar() {
                   <div className="min-w-0">
                     <div className="text-sm font-semibold text-white truncate">{fullname}</div>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-[10px] font-bold capitalize px-1.5 py-0.5 rounded-full"
-                        style={{ background: 'rgba(0,229,255,0.08)', color: '#00e5ff', border: '1px solid rgba(0,229,255,0.15)' }}>
-                        {plan}
-                      </span>
                       {provider === 'github' && (
                         <span className="text-[10px]" style={{ color: '#4b5563' }}>via GitHub</span>
                       )}

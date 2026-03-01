@@ -14,10 +14,6 @@ const bindingSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    url: {
-        type: String,
-        required: true
-    },
     customDomain: {
         type: String
     }

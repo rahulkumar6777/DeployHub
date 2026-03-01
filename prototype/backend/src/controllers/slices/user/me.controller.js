@@ -6,7 +6,7 @@ export const me = async (req, res) => {
 
         const userId = req.user._id;
 
-        const info = await Model.User.findById(userId).select('fullname email provider profilePic verified subscriptionid').populate('subscriptionid');
+        const info = await Model.User.findById(userId).select('fullname email provider profilePic verified updatedAt createdAt')
         return res.status(200).json({
             data: info,
             success: "true"

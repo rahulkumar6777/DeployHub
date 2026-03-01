@@ -17,29 +17,19 @@ const projectSchema = new mongoose.Schema({
         enum: ['Static', 'node'],
         default: 'static'
     },
-    // repoProvider: {
-    //     type: String,
-    //     enum: ["github"],
-    //     default: 'github'
-    // },
-    // repoOwner: String,
-    // repoName: String,
-    // repoBranch: {
-    //     type: String,
-    //     default: "main"
-    // },
     repoLink: {
         type: String,
         required: true
     },
+    
     buildCommand: String,
     publishDir: String,
     startCommand: String,
     port: Number,
     status: {
         type: String,
-        enum: ["active", "disabled"],
-        default: "active"
+        enum: [ 'pending' , 'building' ,"live", "stopped" , 'failed-deploy' , 'deleted'],
+        default: "pending"
     },
     env: {
         type: Map,
@@ -71,12 +61,31 @@ const projectSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    iscustomDomain: {
+    hascustomDomain: {
         type: Boolean,
         default: false
     },
     customDomain: {
         type: String
+    },
+    totalRequest: {
+        type: Number,
+        default: 0
+    },
+    plan: {
+        type: String,
+        enum: ["free", "pro"],
+        default: "free"
+    },
+    startDate: {
+        type: Date
+    },
+    endDate: {
+        type: Date
+    },
+    paymentId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "CompletedOrder"
     }
 
 }, { timestamps: true })
