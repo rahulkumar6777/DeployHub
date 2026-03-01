@@ -161,6 +161,7 @@ const createDeployment = async (req, res) => {
                     const binding = new Model.Binding({
                         project: projectId,
                         subdomain: subdomain,
+                        port: projectinternalPort
                     });
                     await binding.save({ validateBeforeSave: false });
                     return binding;
