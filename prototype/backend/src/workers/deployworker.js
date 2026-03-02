@@ -125,7 +125,7 @@ worker.on("completed", async (job) => {
                     active: true,
                     events: ["push"],
                     config: {
-                        url: "https://b960-103-211-132-79.ngrok-free.app/github-webhook",
+                        url: process.env.NODE_ENV === 'production' ? "https://api.deployhub.cloud/github-webhook" : "https://b960-103-211-132-79.ngrok-free.app/github-webhook",
                         content_type: "json",
                         secret: process.env.GITHUB_WEBHOOK_SECRET
                     }

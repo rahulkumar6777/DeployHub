@@ -19,9 +19,14 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
     try {
         const projectId = job.data;
 
-        const bindingData = await Model.Binding.findOne({ project: projectId }).populate({ path: 'project', populate: { path: 'buildId' } }).lean();
+        const bindingData = await Model.Binding.findOne({ project: projectId })
+            .populate([
+                { path: 'project', populate: { path: 'buildId' } },
+                { path: 'project', populate: { path: 'owner' } }
+            ]);
         const projectData = bindingData.project;
         const buildData = projectData.buildId;
+        const user = await Model.User.findById(projectData.owner)
 
         // here first i check old deployment me build fail hua ya deploy fail hua agar build fail hua to me build yehi pe build
         // kar dunga aur agar deploy fail hua to me redeploy karunga bina build kiye kyuki build already ho chuka hai
@@ -36,21 +41,25 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
             ? projectData.repoLink.slice(0, -4)
             : projectData.repoLink;
 
-        // Extract owner/repo from link
         const parts = repoLinkWithoutGit.split('/');
-        const owner = parts[3]; // "rahulkumar6777"
-        const repo = parts[4].replace(/\.git$/, ''); // "DevLoad"
+        const owner = parts[3];
+        const repo = parts[4].replace(/\.git$/, '');
+
 
         try {
+            const headers = {
+                "Accept": "application/vnd.github.v3+json"
+            };
+
+            if (user.githubAccessToken) {
+                headers.Authorization = `token ${user.githubAccessToken}`;
+            }
+
             const response = await fetch(
                 `https://api.github.com/repos/${owner}/${repo}/git/ref/heads/${projectData.settings.repoBranchName}`,
-                {
-                    headers: {
-                        "Accept": "application/vnd.github.v3+json",
-                        //Authorization: `token ${GITHUB_TOKEN}`
-                    }
-                }
+                { headers }
             );
+
             const data = await response.json();
             commitSha = data?.object?.sha || null;
             console.log("Commit SHA:", commitSha);
@@ -147,8 +156,11 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
                                 (err, res) => (err ? reject(err) : resolve(res)),
                                 (event) => {
                                     if (event.stream) process.stdout.write(event.stream);
-                                    if (event.error) console.error(event.error);
-                                }
+                                    if (event.error) {
+                                        console.error("Docker build error:", event.error);
+                                        reject(new Error(event.error));
+                                    }
+                                },
                             );
                         });
                     }
@@ -175,8 +187,11 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
                                 (err, res) => (err ? reject(err) : resolve(res)),
                                 (event) => {
                                     if (event.stream) process.stdout.write(event.stream);
-                                    if (event.error) console.error(event.error);
-                                }
+                                    if (event.error) {
+                                        console.error("Docker build error:", event.error);
+                                        reject(new Error(event.error));
+                                    }
+                                },
                             );
                         });
                     }
@@ -192,7 +207,17 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
 
                     // Follow push progress
                     await new Promise((resolve, reject) => {
-                        docker.modem.followProgress(pushStream, (err, res) => err ? reject(err) : resolve(res));
+                        docker.modem.followProgress(
+                            pushStream,
+                            (err, res) => (err ? reject(err) : resolve(res)),
+                            (event) => {
+                                if (event.stream) process.stdout.write(event.stream);
+                                if (event.error) {
+                                    console.error("image push error:", event.error);
+                                    reject(new Error(event.error));
+                                }
+                            },
+                        );
                     });
 
                     console.log("Image pushed successfully!");
@@ -207,30 +232,38 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
                 const branchname = projectData.settings.repoBranchName;
                 const isFolder = projectData.settings.folder.enabled;
                 const folderName = projectData.settings.folder?.name;
-                const repoUrl = projectData.repoLink;
 
                 //clone repo
-                if (isFolder === true) {
-                    execSync(`git clone -b ${branchname} --filter=blob:none --sparse ${repoUrl} ${buildFilePath}`, { stdio: "inherit" })
-                    execSync(`git -C ${buildFilePath} sparse-checkout set ${folderName}`, { stdio: "inherit" });
+                let repoUrlWithAuth;
+                if (user.githubAccessToken) {
+                    repoUrlWithAuth = `https://${user.githubAccessToken}@github.com/${owner}/${repo}.git`;
+                } else {
+                    repoUrlWithAuth = `https://github.com/${owner}/${repo}.git`;
+                }
 
-                    // Move contents of folderName into buildFilePath root
+                if (isFolder === true) {
+                    execSync(
+                        `git clone -b ${branchname} --filter=blob:none --sparse ${repoUrlWithAuth} ${buildFilePath}`,
+                        { stdio: "inherit" },
+                    );
+                    execSync(`git -C ${buildFilePath} sparse-checkout set ${folderName}`, {
+                        stdio: "inherit",
+                    });
+
                     const folderPath = path.join(buildFilePath, folderName);
                     if (fs.existsSync(folderPath)) {
                         const entries = await fs.promises.readdir(folderPath, { withFileTypes: true });
                         for (const entry of entries) {
                             const src = path.join(folderPath, entry.name);
                             const dest = path.join(buildFilePath, entry.name);
-
-                            // Move file or directory
                             await fs.promises.cp(src, dest, { recursive: true, force: true });
                         }
-
-                        // clean up the now empty folder
                         await fs.promises.rm(folderPath, { recursive: true, force: true });
                     }
                 } else {
-                    execSync(`git clone -b ${branchname} ${repoUrl} ${buildFilePath}`, { stdio: "inherit" })
+                    execSync(`git clone -b ${branchname} ${repoUrlWithAuth} ${buildFilePath}`, {
+                        stdio: "inherit",
+                    });
                 }
 
                 if (projectData.projectType === 'static') {
@@ -283,22 +316,35 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
             }
         }
 
-        // Find last deployment (to stop old container)
-        const lastDeployment = await Model.deploymentModel
-            .findOne({ project: projectId })
-            .sort({ deployedAt: -1 });
-
-        if (lastDeployment?.containerId) {
+        if (bindingData?.subdomain) {
             try {
-                const oldContainer = docker.getContainer(lastDeployment.containerId);
-                await oldContainer.stop();
-                await oldContainer.remove();
-                console.log("Old container removed");
-            } catch (err) {
-                console.log("Old container not running, skipping");
-                if (err.statusCode !== 404) {
-                    console.log("Container cleanup skipped:", err.message);
+                const containers = await docker.listContainers({ all: true });
+
+                const existingContainer = containers.find(c =>
+                    c.Names.includes(`/${bindingData.subdomain}`)
+                );
+
+                if (existingContainer) {
+                    const container = docker.getContainer(existingContainer.Id);
+
+                    // If running → stop
+                    if (existingContainer.State === "running") {
+                        console.log("Stopping old container...");
+                        await container.stop();
+                    }
+
+                    // Remove container
+                    console.log("Removing old container...");
+                    await container.remove({ force: true });
+
+                    console.log("Old container stopped & removed successfully");
+                } else {
+                    console.log("No existing container found");
                 }
+
+            } catch (err) {
+                console.error("Container cleanup error:", err.message);
+                throw err; // fail deployment if cleanup fails
             }
         }
 
@@ -338,10 +384,8 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
                 name: bindingData.subdomain,
                 Env: envVariables,
                 HostConfig: {
-                    PortBindings: {
-                        "80/tcp": [{ HostPort: bindingData.port.toString() }],
-                    },
-                },
+                    NetworkMode: "users"
+                }
             });
 
             await container.start();
@@ -361,10 +405,8 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
                 name: bindingData.subdomain,
                 Env: envVariables,
                 HostConfig: {
-                    PortBindings: {
-                        [containerPort]: [{ HostPort: bindingData.port.toString() }],
-                    },
-                },
+                    NetworkMode: "users"
+                }
             });
 
             await container.start();
@@ -381,8 +423,6 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
         console.error("Error in ReDeployment Worker:", error);
         throw error
     } finally {
-        // Clean up build files
-        console.log(buildFilePath)
         if (buildFilePath && fs.existsSync(buildFilePath)) {
             fs.rmSync(buildFilePath, { recursive: true, force: true });
         }
@@ -394,9 +434,34 @@ reDeployMentWorker.on("active", async (job) => {
 });
 
 reDeployMentWorker.on("completed", async (job) => {
+
+    const projectId = job.data;
+
+    const project = await Model.Project.findById(projectId);
+
+    if (!project) {
+        console.error("Project not found on completion:", projectId);
+        return;
+    }
+
+    project.status = "live";
+    await project.save({ validateBeforeSave: false });
+
     console.log(`ReDeployment Worker completed for project ID ${job.data}`);
 });
 
 reDeployMentWorker.on("failed", async (job, err) => {
+    const projectId = job.data;
+
+    const project = await Model.Project.findById(projectId);
+
+    if (!project) {
+        console.error("Project not found on completion:", projectId);
+        return;
+    }
+
+    project.status = "failed-deploy";
+    await project.save({ validateBeforeSave: false });
+
     console.error(`ReDeployment Worker failed for project ID ${job.data}:`, err);
 });

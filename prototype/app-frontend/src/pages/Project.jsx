@@ -46,7 +46,7 @@ function timeAgo(dateStr) {
   return `${days}d ago`
 }
 
-function ProjectCard({ project, onMenuAction }) {
+function ProjectCard({ project, onMenuAction, actionLoading }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const isLive = project.status === 'live'
 
@@ -105,16 +105,22 @@ function ProjectCard({ project, onMenuAction }) {
                       { label: isLive ? '⏹ Stop Project' : '▶ Start Project', action: 'toggle' },
                       { label: '🔄 Redeploy', action: 'redeploy' },
                       { label: '🗑 Delete', action: 'delete', danger: true },
-                    ].map(item => (
-                      <button key={item.label}
-                        onClick={() => { setMenuOpen(false); onMenuAction?.(item.action, project._id) }}
-                        className="w-full text-left px-4 py-2 text-sm transition-colors"
-                        style={{ color: item.danger ? '#f87171' : '#9ca3af' }}
-                        onMouseEnter={e => e.currentTarget.style.background = item.danger ? 'rgba(248,113,113,0.08)' : 'rgba(255,255,255,0.04)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                        {item.label}
-                      </button>
-                    ))}
+                    ].map(item => {
+                      const isRunning = actionLoading === item.action
+                      return (
+                        <button key={item.label} disabled={isRunning}
+                          onClick={() => { setMenuOpen(false); onMenuAction?.(item.action, project._id) }}
+                          className="w-full text-left px-4 py-2 text-sm transition-colors flex items-center gap-2 disabled:opacity-50"
+                          style={{ color: item.danger ? '#f87171' : '#9ca3af' }}
+                          onMouseEnter={e => { if (!isRunning) e.currentTarget.style.background = item.danger ? 'rgba(248,113,113,0.08)' : 'rgba(255,255,255,0.04)' }}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                          {isRunning
+                            ? <><div className="w-3 h-3 rounded-full border-2 border-current border-t-transparent animate-spin" /> Processing...</>
+                            : item.label
+                          }
+                        </button>
+                      )
+                    })}
                   </div>
                 </>
               )}
@@ -228,6 +234,8 @@ export function Projects() {
   const [filter, setFilter]                 = useState('all')
   const [sort, setSort]                     = useState('recent')
   const [showTypeSelector, setShowTypeSelector] = useState(false)
+  const [actionLoading, setActionLoading]   = useState({}) // { projectId: 'redeploy' | 'toggle' | 'delete' }
+  const [actionError, setActionError]       = useState(null)
 
   useEffect(() => {
     setLoading(true)
@@ -248,9 +256,28 @@ export function Projects() {
       return new Date(b.createdAt) - new Date(a.createdAt)
     })
 
-  function handleMenuAction(action, projectId) {
-    // wire up to your APIs when ready
-    console.log(action, projectId)
+  async function handleMenuAction(action, projectId) {
+    if (actionLoading[projectId]) return
+
+    setActionError(null)
+    setActionLoading(p => ({ ...p, [projectId]: action }))
+
+    try {
+      if (action === 'redeploy') {
+        const res = await api.post(`/redeploy/${projectId}`)
+        if (res.status === 200) {
+          // Optimistically update status to building
+          setProjects(prev => prev.map(p =>
+            p._id === projectId ? { ...p, status: 'building' } : p
+          ))
+        }
+      }
+      // toggle / delete — wire up when APIs ready
+    } catch (err) {
+      setActionError(err?.response?.data?.message || `Failed to ${action} project.`)
+    } finally {
+      setActionLoading(p => { const n = { ...p }; delete n[projectId]; return n })
+    }
   }
 
   return (
@@ -328,6 +355,15 @@ export function Projects() {
         </div>
       )}
 
+      {/* Action error */}
+      {actionError && (
+        <div className="px-4 py-3 rounded-xl text-sm flex items-center justify-between"
+          style={{ color: '#f87171', background: 'rgba(248,113,113,0.07)', border: '1px solid rgba(248,113,113,0.15)' }}>
+          {actionError}
+          <button onClick={() => setActionError(null)} className="ml-3 opacity-60 hover:opacity-100">✕</button>
+        </div>
+      )}
+
       {/* Filter bar */}
       {!loading && projects.length > 0 && (
         <div className="flex items-center justify-between flex-wrap gap-3">
@@ -364,7 +400,8 @@ export function Projects() {
           <EmptyState navigate={navigate} />
         ) : (
           filtered.map(p => (
-            <ProjectCard key={p._id} project={p} onMenuAction={handleMenuAction} />
+            <ProjectCard key={p._id} project={p} onMenuAction={handleMenuAction}
+              actionLoading={actionLoading[p._id]} />
           ))
         )}
       </div>

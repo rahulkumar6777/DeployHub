@@ -1,41 +1,36 @@
-import { body, validationResult } from "express-validator";
+import mongoose from "mongoose";
 import { Model } from "../../../models/index.js";
 import { reDeploymentQueue } from "../../../utils/queues.js";
 
-const reDeploymentValidate = [
-    body("projectId")
-        .notEmpty()
-        .withMessage("ProjectId is required")
-        .isMongoId()
-        .withMessage("Invalid ProjectId")
-];
 
 const reDeployment = async (req, res) => {
     try {
 
-        await Promise.all(reDeploymentValidate.map((validate) => validate.run(req)));
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({
-                errors: errors.array()[0].msg
-            })
+        const projectid = req.params.projectId;
+
+        if (!mongoose.Types.ObjectId.isValid(projectid)) {
+            return res.status(400).json({ error: 'Invalid projectId format' });
         }
 
-        const projectId = req.body.projectId;
 
-        const project = await Model.Project.findById(projectId);
+        const project = await Model.Project.findById(projectid);
+        console.log(project)
         if (!project) {
             return res.status(404).json({
                 message: "Invalid ProjectId"
             })
         }
 
+        project.status = "building"
+        await project.save({validateBeforeSave: false})
+        const projectId = project._id
         await reDeploymentQueue.add('redeployment', projectId)
 
         return res.status(200).json({
             message: "ReDeployment initiated"
         })
     } catch (error) {
+        console.log(error)
         return res.status(500).json({
             error: "Internal server Error"
         })

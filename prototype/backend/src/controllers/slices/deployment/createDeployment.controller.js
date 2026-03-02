@@ -105,15 +105,19 @@ const createDeployment = async (req, res) => {
         const repo = parts[4].replace(/\.git$/, '');
 
         try {
+            let headers = {
+                "Accept": "application/vnd.github.v3+json"
+            };
+
+            if (user.githubAccessToken) {
+                headers.Authorization = `token ${user.githubAccessToken}`;
+            }
+
             const response = await fetch(
                 `https://api.github.com/repos/${owner}/${repo}/git/ref/heads/${branchname}`,
-                {
-                    headers: {
-                        "Accept": "application/vnd.github.v3+json",
-                        //Authorization: `token ${GITHUB_TOKEN}`
-                    }
-                }
+                { headers }
             );
+
             const data = await response.json();
             commitSha = data?.object?.sha || null;
             console.log("Commit SHA:", commitSha);
@@ -138,7 +142,7 @@ const createDeployment = async (req, res) => {
             projectinternalPort = 80
         }
 
-        
+
 
         if (projectType === 'node') {
             newProject.startCommand = startCommand
@@ -153,7 +157,7 @@ const createDeployment = async (req, res) => {
 
         const generateUniqueName = async (name) => {
             let attempts = 0;
-            while (attempts < 20) { 
+            while (attempts < 20) {
                 const uniqueName = Math.random().toString(36).substring(2, 8);
                 const subdomain = `${name.toLowerCase()}-${uniqueName}`;
 
