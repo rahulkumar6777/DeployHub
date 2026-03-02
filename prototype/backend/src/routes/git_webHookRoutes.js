@@ -10,6 +10,7 @@ router.post(
   express.raw({ type: "*/*" }),
   async (req, res) => {
     try {
+      console.log("auto deploy trigger")
       const signature = req.headers["x-hub-signature-256"];
       const secret = process.env.GITHUB_WEBHOOK_SECRET;
 
