@@ -47,20 +47,29 @@ router.post(
 
       const repoUrl = payload.repository.clone_url.replace(/\.git$/, "");
 
-      const project = await Model.Project.findOne({ repoLink: repoUrl });
-      console.log(project)
+      const projects = await Model.Project.find({ repoLink: repoUrl }).populate('owner');
 
-      if (!project) {
-        return res.send("Project not found");
+      if (!projects || projects.length === 0) {
+        return res.send("No projects found");
       }
 
-      const projectId = project._id
+      for (const project of projects) {
+        if (project.owner.githubAccessToken) {
+          project.status = "building";
+          await project.save({ validateBeforeSave: false });
 
-      await reDeploymentQueue.add("redeployment", projectId);
+          const projectId = project._id;
+          await reDeploymentQueue.add("redeployment", projectId);
 
-      console.log("Auto redeploy triggered for", project._id);
+          console.log("Auto redeploy triggered for", project._id);
+        } else {
+          console.log("Redeploy not triggered for", project._id, "because user not logged in with GitHub");
+        }
+      }
 
-      res.status(200).send("Redeploy triggered");
+      res.status(200).send("Redeploy triggered for eligible projects");
+
+
     } catch (err) {
       console.error("Webhook error:", err);
       res.status(500).send("Webhook failed");
