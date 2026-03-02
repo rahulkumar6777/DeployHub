@@ -150,6 +150,8 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
                             VITE_ENV_CONTENT: viteEnvContent
                         };
 
+                        console.log("dynamicBuildArgs" , dynamicBuildArgs)
+
                         const tarStream = await docker.buildImage(tarStreamPack, {
                             t: imageName,
                             dockerfile: "Dockerfile",
