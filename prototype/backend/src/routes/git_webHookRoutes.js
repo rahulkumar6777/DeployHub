@@ -45,7 +45,7 @@ router.post(
         return res.send("Ignored (not default branch)");
       }
 
-      const repoUrl = payload.repository.clone_url;
+      const repoUrl = payload.repository.clone_url.replace(/\.git$/, "");
 
       const project = await Model.Project.findOne({ repoLink: repoUrl });
       console.log(project)
