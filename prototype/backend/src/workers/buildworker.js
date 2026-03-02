@@ -26,15 +26,19 @@ const buildWorker = new Worker(
       const imageName = `${dockerusername}/${projectId.toString().toLowerCase()}:${buildId.toString().toLowerCase()}`;
 
       // get data from dataBase
-      const projectData = await Model.Project.findById(projectId).populate("buildId").populate("owner");
+      const projectData = await Model.Project.findById(projectId).populate("buildId").populate("owner").lean()
       const usergithubAccessToken = projectData.owner?.githubAccessToken;
 
       const buildData = projectData.buildId
-      buildData.status = "pending";
-      buildData.startedAt = new Date();
-      projectData.status = "building";
-      await projectData.save({ validateBeforeSave: false })
-      await buildData.save({ validateBeforeSave: false });
+
+      await Model.Build.findByIdAndUpdate(buildData._id, {
+        status: "pending",
+        startedAt: new Date()
+      })
+
+      await Model.Project.findByIdAndUpdate(projectData._id, {
+        status: "building"
+      })
 
       //repofilepath
       const baserepopath = "builds";
@@ -228,11 +232,13 @@ const buildWorker = new Worker(
         await buildandpushimage(projectData, buildFilePath, "node");
       }
 
-      buildData.dockerImage = imageName;
-      buildData.status = "success";
-      buildData.finishedAt = new Date();
 
-      await buildData.save({ validateBeforeSave: false });
+      await Model.Build.findByIdAndUpdate(buildData._id, {
+        status: "success",
+        finishedAt: new Date(),
+        dockerImage: imageName
+      })
+
     } catch (error) {
       console.log("error in build worker", error);
       throw error;

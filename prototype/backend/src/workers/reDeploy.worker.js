@@ -23,7 +23,7 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
             .populate([
                 { path: 'project', populate: { path: 'buildId' } },
                 { path: 'project', populate: { path: 'owner' } }
-            ]);
+            ]).lean();
         const projectData = bindingData.project;
         const buildData = projectData.buildId;
         const user = await Model.User.findById(projectData.owner)
@@ -138,6 +138,7 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
 
                         let viteEnvContent = "";
 
+                        console.log
                         if (projectdata.env) {
                             for (const [key, value] of Object.entries(projectdata.env)) {
                                 viteEnvContent += `${key}=${value}\n`;
