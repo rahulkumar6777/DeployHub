@@ -1,34 +1,12 @@
 import { Link } from 'react-router-dom'
 
-/**
- * PlanCard — a single pricing tier card.
- *
- * Props:
- *   plan    {object}  Plan data (see shape below)
- *   annual  {boolean} Show annual price instead of monthly
- *   delay   {number}  CSS transition-delay in ms
- *
- * Plan shape:
- * {
- *   name:      string
- *   desc:      string
- *   monthly:   number
- *   annual:    number
- *   highlight: boolean   — featured border + glow
- *   badge:     string | null
- *   features:  { label: string, ok: boolean }[]
- *   cta:       string
- *   ctaStyle:  'solid' | 'outline'
- * }
- */
 export default function PlanCard({ plan, annual, delay = 0 }) {
   return (
     <div
-      className={`reveal plan-hover rounded-2xl p-7 relative transition-all duration-300 ${
-        plan.highlight
+      className={`reveal plan-hover rounded-2xl p-7 relative transition-all duration-300 ${plan.highlight
           ? 'bg-[#111827] border-2 border-[#00e5ff]/50 shadow-2xl shadow-cyan-500/10'
           : 'bg-[#111827] border border-white/5'
-      }`}
+        }`}
       style={{ transitionDelay: `${delay}ms` }}
     >
       {/* Featured badge */}
@@ -46,7 +24,7 @@ export default function PlanCard({ plan, annual, delay = 0 }) {
 
       {/* Price */}
       <div className="flex items-end gap-1 mb-6">
-        <span className="text-gray-400 text-lg mb-1">$</span>
+        <span className="text-gray-400 text-lg mb-1">₹</span>
         <span className="font-syne font-black text-5xl leading-none">
           {annual ? plan.annual : plan.monthly}
         </span>
@@ -58,16 +36,14 @@ export default function PlanCard({ plan, annual, delay = 0 }) {
         {plan.features.map(feature => (
           <li
             key={feature.label}
-            className={`flex items-center gap-3 text-sm ${
-              feature.ok ? 'text-gray-300' : 'text-gray-600'
-            }`}
+            className={`flex items-center gap-3 text-sm ${feature.ok ? 'text-gray-300' : 'text-gray-600'
+              }`}
           >
             <span
-              className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] flex-shrink-0 ${
-                feature.ok
+              className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] flex-shrink-0 ${feature.ok
                   ? 'bg-emerald-400/20 text-emerald-400'
                   : 'bg-white/5 text-gray-600'
-              }`}
+                }`}
             >
               {feature.ok ? '✓' : '–'}
             </span>
@@ -77,16 +53,15 @@ export default function PlanCard({ plan, annual, delay = 0 }) {
       </ul>
 
       {/* CTA button */}
-      <Link
-        to="#"
-        className={`block text-center py-3 rounded-xl text-sm font-bold transition-all ${
-          plan.ctaStyle === 'solid'
+      <a
+        href="https://dashboard.deployhub.cloud"
+        className={`block text-center py-3 rounded-xl text-sm font-bold transition-all ${plan.ctaStyle === 'solid'
             ? 'bg-[#00e5ff] text-black hover:bg-cyan-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-cyan-500/30'
             : 'border border-white/10 text-white hover:border-[#00e5ff]/50 hover:text-[#00e5ff]'
-        }`}
+          }`}
       >
         {plan.cta}
-      </Link>
+      </a>
     </div>
   )
 }

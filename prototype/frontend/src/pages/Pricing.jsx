@@ -12,78 +12,72 @@ const PLANS = [
     highlight: false,
     badge:     null,
     features: [
-      { label: '3 Projects',               ok: true  },
-      { label: '2,000 Monthly Requests',   ok: true  },
-      { label: 'Static Website Hosting',   ok: true  },
-      { label: 'Node.js Hosting',          ok: true  },
-      { label: '512 MB RAM per app',       ok: true  },
-      { label: '0.1 vCPU per app',         ok: true  },
-      { label: 'Free SSL / HTTPS',         ok: true  },
-      { label: 'Custom Domain',            ok: false },
-      { label: 'Priority Support',         ok: false },
-      { label: 'Team Members',             ok: false },
+      { label: 'Per project pricing',          ok: true  },
+      { label: '2,000 Requests / mo',          ok: true  },
+      { label: 'Static Website Hosting',       ok: true  },
+      { label: 'Node.js Hosting',              ok: true  },
+      { label: '512 MB RAM per project',       ok: true  },
+      { label: '0.1 vCPU per project',         ok: true  },
+      { label: 'Free SSL / HTTPS',             ok: true  },
+      { label: 'deployhub.online subdomain',       ok: true  },
+      { label: 'Custom Domain',                ok: false },
+      { label: 'Priority Support',             ok: false },
     ],
     cta:      'Deploy for Free',
     ctaStyle: 'outline',
   },
   {
     name:      'Pro',
-    desc:      'For serious makers who need more projects and traffic.',
-    monthly:   9,
-    annual:    7,
+    desc:      'For projects that need more power, traffic and a custom domain.',
+    monthly:   799,
+    annual:    null,
     highlight: true,
     badge:     'Most Popular',
     features: [
-      { label: 'Unlimited Projects',          ok: true  },
-      { label: '100,000 Monthly Requests',    ok: true  },
-      { label: 'Static Website Hosting',      ok: true  },
-      { label: 'Node.js Hosting',             ok: true  },
-      { label: '2 GB RAM per app',            ok: true  },
-      { label: '1 vCPU per app',              ok: true  },
-      { label: 'Free SSL / HTTPS',            ok: true  },
-      { label: 'Custom Domain',               ok: true  },
-      { label: 'Priority Support',            ok: true  },
-      { label: 'Team Members',               ok: false },
+      { label: 'Per project pricing',          ok: true  },
+      { label: '1,00,000 Requests / mo',       ok: true  },
+      { label: 'Static Website Hosting',       ok: true  },
+      { label: 'Node.js Hosting',              ok: true  },
+      { label: '2 GB RAM per project',         ok: true  },
+      { label: '1 vCPU per project',           ok: true  },
+      { label: 'Free SSL / HTTPS',             ok: true  },
+      { label: 'Custom Domain',                ok: true  },
+      { label: 'Priority Support',             ok: true  },
+      { label: 'Multi-month discounts',        ok: true  },
     ],
-    cta:      'Get Pro',
+    cta:      'Upgrade Project',
     ctaStyle: 'solid',
   },
-  {
-    name:      'Team',
-    desc:      'For small teams shipping multiple products together.',
-    monthly:   29,
-    annual:    23,
-    highlight: false,
-    badge:     null,
-    features: [
-      { label: 'Unlimited Projects',          ok: true },
-      { label: '500,000 Monthly Requests',    ok: true },
-      { label: 'Static Website Hosting',      ok: true },
-      { label: 'Node.js Hosting',             ok: true },
-      { label: '4 GB RAM per app',            ok: true },
-      { label: '2 vCPU per app',              ok: true },
-      { label: 'Free SSL / HTTPS',            ok: true },
-      { label: 'Custom Domain',              ok: true },
-      { label: 'Priority Support',           ok: true },
-      { label: '5 Team Members',             ok: true },
-    ],
-    cta:      'Get Team',
-    ctaStyle: 'outline',
-  },
+]
+
+const DISCOUNTS = [
+  { months: 1,  discount: 0  },
+  { months: 3,  discount: 4  },
+  { months: 6,  discount: 8  },
+  { months: 12, discount: 10 },
+  { months: 24, discount: 15 },
 ]
 
 const FAQS = [
   {
+    q: 'How does per-project pricing work?',
+    a: 'Each project gets its own plan — Free or Pro. You choose the plan per project when deploying. You can have some projects on Free and others on Pro.',
+  },
+  {
     q: 'What counts as a request?',
-    a: 'Every HTTP request your app receives — page loads, API calls, assets — is counted toward your monthly limit.',
+    a: 'Every HTTP request your app receives — page loads, API calls, assets — is counted toward that project\'s monthly limit.',
   },
   {
-    q: 'Can I upgrade or downgrade anytime?',
-    a: 'Yes. Upgrades take effect immediately. Downgrades apply at the next billing cycle.',
+    q: 'Can I upgrade a project anytime?',
+    a: 'Yes. You can upgrade any project from Free to Pro at any time from your project settings or billing page.',
   },
   {
-    q: 'What happens if I exceed my request limit?',
-    a: 'We notify you at 80% and 100%. On Free, requests above the limit may be throttled. On paid plans, we never cut you off.',
+    q: 'What happens if I exceed the request limit?',
+    a: 'We notify you at 80% usage. On Free projects, requests above the limit may be throttled. Pro projects are never cut off.',
+  },
+  {
+    q: 'Do multi-month discounts apply?',
+    a: 'Yes — Pro plan supports 1, 3, 6, 12 and 24 month billing. Longer commitments get up to 15% off.',
   },
   {
     q: 'Do you support databases?',
@@ -93,7 +87,6 @@ const FAQS = [
 
 export default function Pricing() {
   useReveal()
-  const [annual, setAnnual] = useState(false)
 
   return (
     <div className="min-h-screen pt-24">
@@ -104,49 +97,76 @@ export default function Pricing() {
           Pricing
         </div>
         <h1 className="reveal font-syne font-black text-5xl md:text-6xl tracking-tight mb-4">
-          Simple, honest pricing.
+          Pay per project.
         </h1>
-        <p className="reveal text-gray-400 text-lg max-w-lg mx-auto mb-10 font-light">
-          Start free forever. Upgrade only when you need more. No tricks.
+        <p className="reveal text-gray-400 text-lg max-w-lg mx-auto mb-4 font-light">
+          Each project gets its own plan. Start free, upgrade only the projects that need more power.
         </p>
-
-        {/* Monthly / Annual toggle */}
-        <div className="reveal inline-flex items-center gap-1 bg-[#111827] border border-white/5 p-1 rounded-xl mb-16">
-          <button
-            onClick={() => setAnnual(false)}
-            className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
-              !annual ? 'bg-[#00e5ff] text-black' : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            Monthly
-          </button>
-          <button
-            onClick={() => setAnnual(true)}
-            className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
-              annual ? 'bg-[#00e5ff] text-black' : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            Annual
-            <span
-              className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                annual ? 'bg-black/20 text-black' : 'bg-emerald-400/20 text-emerald-400'
-              }`}
-            >
-              Save 20%
-            </span>
-          </button>
-        </div>
+        <p className="reveal text-sm text-gray-600 mb-14">No account-level plans. No surprises.</p>
 
         {/* Plans */}
-        <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-6 text-left">
+        <div className="max-w-3xl mx-auto grid md:grid-cols-2 gap-6 text-left">
           {PLANS.map((plan, i) => (
             <PlanCard
               key={plan.name}
               plan={plan}
-              annual={annual}
+              annual={false}
               delay={i * 100}
             />
           ))}
+        </div>
+      </section>
+
+      {/* ── DISCOUNT TABLE ──────────────────────────────── */}
+      <section className="py-12 px-6 max-w-2xl mx-auto">
+        <h2 className="reveal font-syne font-black text-2xl text-center mb-2">Pro — Multi-month discounts</h2>
+        <p className="reveal text-sm text-center text-gray-500 mb-8">Commit longer, pay less per month.</p>
+        <div className="reveal rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.07)' }}>
+          <div className="grid grid-cols-3 px-5 py-3 text-[10px] font-black tracking-[0.15em] uppercase"
+            style={{ background: 'rgba(255,255,255,0.03)', color: '#374151', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <span>Duration</span>
+            <span className="text-center">Discount</span>
+            <span className="text-right">Total</span>
+          </div>
+          {DISCOUNTS.map((d, i) => {
+            const perMonth = Math.round(799 * (1 - d.discount / 100))
+            const total    = perMonth * d.months
+            const saved    = 799 * d.months - total
+            const isLast   = i === DISCOUNTS.length - 1
+            return (
+              <div key={d.months} className="grid grid-cols-3 px-5 py-3.5 items-center"
+                style={{
+                  borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.04)',
+                  background: isLast ? 'rgba(0,229,255,0.03)' : 'transparent',
+                }}>
+                <span className="text-sm font-medium text-white">
+                  {d.months === 1  ? '1 Month'  :
+                   d.months === 3  ? '3 Months' :
+                   d.months === 6  ? '6 Months' :
+                   d.months === 12 ? '1 Year'   : '2 Years'}
+                </span>
+                <span className="text-center">
+                  {d.discount > 0
+                    ? <span className="text-xs font-black px-2 py-0.5 rounded-full"
+                        style={{ background: 'rgba(52,211,153,0.1)', color: '#34d399' }}>
+                        {d.discount}% OFF
+                      </span>
+                    : <span className="text-xs" style={{ color: '#374151' }}>—</span>
+                  }
+                </span>
+                <div className="text-right">
+                  <div className="text-sm font-bold" style={{ color: isLast ? '#00e5ff' : '#fff' }}>
+                    ₹{total.toLocaleString()}
+                  </div>
+                  {saved > 0 && (
+                    <div className="text-[10px]" style={{ color: '#374151' }}>
+                      save ₹{saved.toLocaleString()}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
         </div>
       </section>
 
