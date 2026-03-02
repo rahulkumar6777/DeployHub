@@ -81,15 +81,24 @@ const buildWorker = new Worker(
           if (type === "static") {
             const tarStreamPack = tar.pack(buildFilePath);
 
+            const dynamicBuildArgs = {
+              BUILD_CMD: projectdata.buildCommand || "",
+              BUILD_DIR: projectdata.publishDir,
+            };
+
+            if (projectdata.env) {
+              for (const [key, value] of Object.entries(projectdata.env)) {
+                if (key.startsWith("VITE_")) {
+                  dynamicBuildArgs[key] = value;
+                }
+              }
+            }
+
             const tarStream = await docker.buildImage(tarStreamPack, {
-              t: `${imageName}`,
+              t: imageName,
               dockerfile: "Dockerfile",
               nocache: true,
-
-              buildargs: {
-                BUILD_CMD: projectdata.buildCommand || "",
-                BUILD_DIR: projectdata.publishDir,
-              },
+              buildargs: dynamicBuildArgs,
             });
 
             await new Promise((resolve, reject) => {
@@ -166,7 +175,7 @@ const buildWorker = new Worker(
       const branchname = projectData.settings.repoBranchName;
       const isFolder = projectData.settings.folder.enabled;
       const folderName = projectData.settings.folder?.name;
-      const repoUrl = projectData.repoLink;  
+      const repoUrl = projectData.repoLink;
       const repoLinkWithoutGit = repoUrl.replace(/\.git$/, '');
       const parts = repoLinkWithoutGit.split('/');
       const owner = parts[3];
@@ -258,7 +267,7 @@ buildWorker.on("failed", async (job, err) => {
 
     await Model.Project.findByIdAndUpdate(
       job.data.projectId,
-      { status: "failed-deploy"},
+      { status: "failed-deploy" },
       { validateBeforeSave: false },
     );
   } catch (err) {

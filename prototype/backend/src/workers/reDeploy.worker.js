@@ -136,19 +136,25 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
                     if (type === 'static') {
                         const tarStreamPack = tar.pack(buildFilePath);
 
-                        const tarStream = await docker.buildImage(
-                            tarStreamPack,
-                            {
-                                t: `${imageName}`,
-                                dockerfile: "Dockerfile",
-                                nocache: true,
+                        const dynamicBuildArgs = {
+                            BUILD_CMD: projectdata.buildCommand || "",
+                            BUILD_DIR: projectdata.publishDir,
+                        };
 
-                                buildargs: {
-                                    BUILD_CMD: projectdata.buildCommand || "",
-                                    BUILD_DIR: projectdata.publishDir
+                        if (projectdata.env) {
+                            for (const [key, value] of Object.entries(projectdata.env)) {
+                                if (key.startsWith("VITE_")) {
+                                    dynamicBuildArgs[key] = value;
                                 }
                             }
-                        );
+                        }
+
+                        const tarStream = await docker.buildImage(tarStreamPack, {
+                            t: imageName,
+                            dockerfile: "Dockerfile",
+                            nocache: true,
+                            buildargs: dynamicBuildArgs,
+                        });
 
                         await new Promise((resolve, reject) => {
                             docker.modem.followProgress(
