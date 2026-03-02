@@ -136,18 +136,19 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
                     if (type === 'static') {
                         const tarStreamPack = tar.pack(buildFilePath);
 
-                        const dynamicBuildArgs = {
-                            BUILD_CMD: projectdata.buildCommand || "",
-                            BUILD_DIR: projectdata.publishDir,
-                        };
+                        let viteEnvContent = "";
 
                         if (projectdata.env) {
                             for (const [key, value] of Object.entries(projectdata.env)) {
-                                if (key.startsWith("VITE_")) {
-                                    dynamicBuildArgs[key] = value;
-                                }
+                                viteEnvContent += `${key}=${value}\n`;
                             }
                         }
+
+                        const dynamicBuildArgs = {
+                            BUILD_CMD: projectdata.buildCommand || "",
+                            BUILD_DIR: projectdata.publishDir,
+                            VITE_ENV_CONTENT: viteEnvContent
+                        };
 
                         const tarStream = await docker.buildImage(tarStreamPack, {
                             t: imageName,

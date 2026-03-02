@@ -7,13 +7,12 @@ RUN npm ci
 
 COPY . .
 
-
 ARG BUILD_CMD
 ARG BUILD_DIR=build
+ARG VITE_ENV_CONTENT
 
 
-RUN env | grep ^VITE_ > .env || true
-
+RUN echo "$VITE_ENV_CONTENT" > .env
 
 RUN if [ -n "$BUILD_CMD" ]; then sh -c "$BUILD_CMD"; else npm run build; fi
 
