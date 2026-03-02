@@ -53,7 +53,9 @@ router.post(
         return res.send("Project not found");
       }
 
-      await reDeploymentQueue.add("redeployment", project._id.toString());
+      const projectId = project._id
+
+      await reDeploymentQueue.add("redeployment", projectId);
 
       console.log("Auto redeploy triggered for", project._id);
 
