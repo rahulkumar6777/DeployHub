@@ -388,7 +388,6 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
             const container = await docker.createContainer({
                 Image: imageName,
                 name: bindingData.subdomain,
-                Env: envVariables,
                 HostConfig: {
                     NetworkMode: "users"
                 }
