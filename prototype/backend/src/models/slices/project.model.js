@@ -14,7 +14,8 @@ const projectSchema = new mongoose.Schema({
     projectType: {
         type: String,
         required: true,
-        enum: ['Static', 'node'],
+        lowerCase: true,
+        enum: ['static', 'node'],
         default: 'static'
     },
     repoLink: {
