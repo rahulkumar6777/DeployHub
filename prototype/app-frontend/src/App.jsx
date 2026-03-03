@@ -15,6 +15,8 @@ import Profile from "./pages/Profile";
 import NewDeployment from "./pages/NewDeployment";
 import Overview from "./pages/Overview";
 import Settings from "./pages/Settings";
+import Builds from "./pages/Builds";
+import BuildLogs from "./pages/BuildsLogs";
 
 function Protected({ children }) {
   const { isAuthenticated, isAuthReady } = useAuth();
@@ -52,7 +54,8 @@ export default function App() {
       <Route element={<ProtectedWithGate><ProjectLayout /></ProtectedWithGate>}>
         <Route path="/project/:id"          element={<Overview />} />
         <Route path="/project/:id/logs"     element={<div className="text-white p-4">Logs — coming soon</div>} />
-        <Route path="/project/:id/builds"   element={<div className="text-white p-4">Builds — coming soon</div>} />
+        <Route path="/project/:id/builds"   element={<Builds />} />
+        <Route path="/project/:id/logs/:buildId"     element={<BuildLogs />} />
         <Route path="/project/:id/metrics"  element={<div className="text-white p-4">Metrics — coming soon</div>} />
         <Route path="/project/:id/settings" element={ <Settings/> }/>
         <Route path="/project/:id/domains"  element={<div className="text-white p-4">Domains — coming soon</div>} />

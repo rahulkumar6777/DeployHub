@@ -56,6 +56,7 @@ router.post(
       for (const project of projects) {
         if (project.owner.githubAccessToken) {
           project.status = "building";
+          project.totalBuilds= +1;
           await project.save({ validateBeforeSave: false });
 
           const projectId = project._id;

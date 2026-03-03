@@ -46,7 +46,8 @@ router.patch('/projects/:id/settings/general', verifyJWT, contollers.Project.set
 router.patch('/projects/:id/settings/build', verifyJWT, contollers.Project.settings.updateBuildSettings)
 router.patch('/projects/:id/settings/env', verifyJWT, contollers.Project.settings.updateEnvSettings)
 router.delete('/projects/:id', verifyJWT, contollers.Project.settings.deleteProject)
-
+router.get('/projects/:id/builds', verifyJWT, contollers.Project.logs.getProjectBuilds)
+router.get('/projects/:id/builds/:buildId', verifyJWT, contollers.Project.logs.getBuildById)
 
 
 export default router;
