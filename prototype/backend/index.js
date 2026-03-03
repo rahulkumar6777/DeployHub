@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from "cors"
+import helmet from "helmet";
+
 
 // dotenv
 import dotenv from 'dotenv';
@@ -28,8 +30,23 @@ import git_webHookRoutes from './src/routes/git_webHookRoutes.js'
 app.use('/github-webhook', git_webHookRoutes)
 
 
+
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(
+    helmet.contentSecurityPolicy({
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: [
+                "'self'",
+                "https://dashboard.deployhub.cloud",
+                "https://static.cloudflareinsights.com"
+            ],
+        },
+    })
+);
+
 
 import cookieParser from "cookie-parser";
 app.use(cookieParser());
