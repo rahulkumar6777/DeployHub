@@ -7,30 +7,36 @@ const worker = new Worker("deployhub-recreate-container", async (job) => {
     try {
 
         const projectId = job.data.projectId
-        const oldcontainername = job.data.oldname
-        const newcontainername = job.data.newname
+        const oldcontainername = job.data.oldcontainername
+        const newcontainername = job.data.newcontainername
 
-        const containers = await docker.listContainers({ all: true })
-        const oldcontainer = containers.find(c =>
-            c.Names.includes(`/${oldcontainername}`)
-        )
+        try {
+            const containers = await docker.listContainers({ all: true });
 
-        console.log(oldcontainer)
+            const existingContainer = containers.find(c =>
+                c.Names.includes(`/${oldcontainername}`)
+            );
 
-        if (oldcontainer) {
-            const container = docker.getContainer(oldcontainer.Id);
+            if (existingContainer) {
+                const container = docker.getContainer(existingContainer.Id);
 
-            // If running → stop
-            if (oldcontainer.State === "running") {
-                console.log("Stopping old container...");
-                await container.stop();
+                
+                if (existingContainer.State === "running") {
+                    console.log("Stopping old container...");
+                    await container.stop();
+                }
+
+                // Remove container
+                console.log("Removing old container...");
+                await container.remove({ force: true });
+
+                console.log("Old container stopped & removed successfully");
+            } else {
+                console.log("No existing container found");
             }
 
-            // Remove container
-            console.log("Removing old container...");
-            await container.remove({ force: true });
-
-            console.log("Old container stopped & removed successfully");
+        } catch (err) {
+            console.error("Container cleanup error:", err.message);
         }
 
         const projectData = await Model.Project.findById(projectId).populate("buildId").lean();

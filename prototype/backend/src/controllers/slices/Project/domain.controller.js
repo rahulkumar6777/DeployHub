@@ -1,6 +1,6 @@
 import { Model } from '../../../models/index.js'
 import { recreateContainer } from '../../../utils/queues.js'
-
+import { redisclient } from "../../../configs/redis.js";
 
 
 export const getProjectDomains = async (req, res) => {
@@ -65,6 +65,18 @@ export const updateSubdomain = async (req, res) => {
         project.status = "building"
 
         await project.save({ validateBeforeSave: false })
+
+        const allocation = await Model.Binding.findOne({project: project._id})
+        allocation.subdomain = subdomain
+        await allocation.save({validateBeforeSave: false})
+
+
+        await redisclient.del(`subdomain:${data.oldcontainername}`);
+        await redisclient.hset(`subdomain:${project.subdomain}`, {
+            port: allocation.port,
+            projectId: project._id.toString(),
+            plan: project.plan
+        });
 
         await recreateContainer.add('deployhub-recreate-container', data)
 
