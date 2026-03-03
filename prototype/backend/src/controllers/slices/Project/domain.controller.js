@@ -57,14 +57,15 @@ export const updateSubdomain = async (req, res) => {
 
         const data = {
             projectId: project._id,
-            oldcontainername: project.subdomain,
-            newcontainername: project.subdomain
+            oldcontainername: project.subdomain
         }
 
         project.subdomain = subdomain;
         project.status = "building"
 
         await project.save({ validateBeforeSave: false })
+
+        data.newcontainername = project.subdomain;
 
         const allocation = await Model.Binding.findOne({project: project._id})
         allocation.subdomain = subdomain
