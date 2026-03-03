@@ -22,14 +22,14 @@ const projectSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    
+
     buildCommand: String,
     publishDir: String,
     startCommand: String,
     port: Number,
     status: {
         type: String,
-        enum: [ 'pending' , 'building' ,"live", "stopped" , 'failed-deploy' , 'deleted'],
+        enum: ['pending', 'building', "live", "stopped", 'failed-deploy', 'deleted'],
         default: "pending"
     },
     env: {
@@ -48,8 +48,14 @@ const projectSchema = new mongoose.Schema({
             },
             name: {
                 type: String,
-                required: function () {
-                    return this.folder.enabled;
+                validate: {
+                    validator: function (value) {
+                        if (this.folder?.enabled && !value) {
+                            return false;
+                        }
+                        return true;
+                    },
+                    message: "Folder name is required when folder is enabled"
                 }
             }
         }

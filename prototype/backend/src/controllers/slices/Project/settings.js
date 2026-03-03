@@ -50,7 +50,11 @@ export const updateGeneralSettings = async (req, res) => {
         const project = await Model.Project.findOneAndUpdate(
             { _id: req.params.id, owner: req.user._id, status: { $ne: 'deleted' } },
             { $set: update },
-            { returnDocument: 'after', runValidators: true }
+            {
+                returnDocument: 'after',
+                runValidators: true,
+                context: 'query'   // ✅ VERY IMPORTANT
+            }
         ).select('name settings')
 
         if (!project) return res.status(404).json({ success: false, message: 'Project not found' })
