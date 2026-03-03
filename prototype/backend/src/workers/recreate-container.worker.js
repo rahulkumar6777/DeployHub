@@ -20,7 +20,7 @@ const worker = new Worker("deployhub-recreate-container", async (job) => {
             if (existingContainer) {
                 const container = docker.getContainer(existingContainer.Id);
 
-                
+
                 if (existingContainer.State === "running") {
                     console.log("Stopping old container...");
                     await container.stop();
@@ -72,6 +72,8 @@ const worker = new Worker("deployhub-recreate-container", async (job) => {
             })
 
             await container.start();
+
+            await container.logs({ stdout: true, stderr: true })
         }
     } catch (error) {
         console.log("Error While contaien restart")
