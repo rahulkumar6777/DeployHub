@@ -49,7 +49,7 @@ const worker = new Worker("deployhub-recreate-container", async (job) => {
             }
         }
 
-        if (projectData.projectType === "Static") {
+        if (projectData.projectType === "static") {
             const container = await docker.createContainer({
                 Image: projectData.buildId.dockerImage,
                 name: newcontainername,
@@ -59,6 +59,8 @@ const worker = new Worker("deployhub-recreate-container", async (job) => {
             })
 
             await container.start()
+
+            console.log('new container started for static')
         }
 
         if (projectData.projectType === 'node') {
@@ -74,6 +76,8 @@ const worker = new Worker("deployhub-recreate-container", async (job) => {
             await container.start();
 
             await container.logs({ stdout: true, stderr: true })
+
+            console.log('new container started for node')
         }
     } catch (error) {
         console.log("Error While contaien restart")
