@@ -7,7 +7,7 @@ import React, {
   useCallback,
 } from "react";
 import { useNavigate } from "react-router-dom";
-import { api, attachInterceptors } from "../api/apiClient";
+import { api, attachInterceptors } from "../api/apiclient";
 
 const AuthContext = createContext();
 
