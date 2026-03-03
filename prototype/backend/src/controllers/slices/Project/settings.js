@@ -1,6 +1,6 @@
 import { Model } from '../../../models/index.js'
 
-
+// ── GET /api/projects/:id/settings ───────────────────────
 export const getProjectSettings = async (req, res) => {
     try {
         const project = await Model.Project.findOne({
@@ -13,8 +13,14 @@ export const getProjectSettings = async (req, res) => {
 
         if (!project) return res.status(404).json({ success: false, message: 'Project not found' })
 
-
-        const env = project.env ? Object.fromEntries(project.env) : {}
+        let env = {}
+        if (project.env) {
+            if (project.env instanceof Map) {
+                env = Object.fromEntries(project.env)
+            } else if (typeof project.env === 'object') {
+                env = { ...project.env }
+            }
+        }
 
         res.status(200).json({
             success: true,
@@ -26,7 +32,7 @@ export const getProjectSettings = async (req, res) => {
     }
 }
 
-
+// ── PATCH /api/projects/:id/settings/general ─────────────
 export const updateGeneralSettings = async (req, res) => {
     try {
         const { name, repoBranchName, folder } = req.body
@@ -56,7 +62,7 @@ export const updateGeneralSettings = async (req, res) => {
     }
 }
 
-
+// ── PATCH /api/projects/:id/settings/build ───────────────
 export const updateBuildSettings = async (req, res) => {
     try {
         const { buildCommand, publishDir, startCommand, port } = req.body
@@ -85,7 +91,7 @@ export const updateBuildSettings = async (req, res) => {
 // ── PATCH /api/projects/:id/settings/env ─────────────────
 export const updateEnvSettings = async (req, res) => {
     try {
-        const { env } = req.body
+        const { env } = req.body // plain object { KEY: 'value' }
 
         if (typeof env !== 'object' || Array.isArray(env)) {
             return res.status(400).json({ success: false, message: 'env must be a key-value object' })
@@ -111,7 +117,7 @@ export const updateEnvSettings = async (req, res) => {
     }
 }
 
-
+// ── DELETE /api/projects/:id ─────────────────────────────
 export const deleteProject = async (req, res) => {
     try {
         const project = await Model.Project.findOneAndUpdate(
