@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { api } from '../api/apiclient' 
 
 const PaymentGateway = ({ amount, description }) => {
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const navigate = useNavigate();
-  const { api, user, refreshAccessToken } = useAuth();
+  const { user, refreshAccessToken } = useAuth();
 
   const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
 

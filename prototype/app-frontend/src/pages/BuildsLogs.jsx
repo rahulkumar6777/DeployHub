@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { api } from '../api/apiclient' 
 
 function duration(start, end) {
   if (!start || !end) return null
@@ -26,7 +26,6 @@ function lineColor(line) {
 export default function BuildLogs() {
   const { id: projectId, buildId } = useParams()
   const navigate = useNavigate()
-  const { api }  = useAuth()
   const bottomRef = useRef(null)
 
   const [build,   setBuild]   = useState(null)

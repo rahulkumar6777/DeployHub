@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { api } from '../api/apiclient' 
 
 const STATUS = {
   live:           { text: 'Live',       dot: '#34d399', bg: 'rgba(52,211,153,0.08)',  border: 'rgba(52,211,153,0.18)',  color: '#34d399' },
@@ -225,7 +225,6 @@ function EmptyState({ navigate }) {
 
 export function Projects() {
   const navigate = useNavigate()
-  const { api }  = useAuth()
 
   const [projects, setProjects]             = useState([])
   const [loading, setLoading]               = useState(true)

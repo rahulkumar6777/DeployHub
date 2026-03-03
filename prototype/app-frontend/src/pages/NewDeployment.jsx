@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { api } from '../api/apiclient' 
 
 const BASE_PRICE = 799
 const DISCOUNTS = { 1: 0, 3: 4, 6: 8, 12: 10, 24: 15 }
@@ -165,7 +166,7 @@ function PlanCard({ title, price, features, selected, onClick, highlight, verifi
 export default function NewDeployment() {
   const { type }       = useParams()
   const navigate       = useNavigate()
-  const { user, api }  = useAuth()
+  const { user }  = useAuth()
   const razorpayKey    = import.meta.env.VITE_RAZORPAY_KEY_ID
   const razorpayLoaded = useRazorpay()
 

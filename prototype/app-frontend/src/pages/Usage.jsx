@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from '../context/AuthContext'
+import { api } from '../api/apiclient' 
 
 function Counter({ to }) {
   const [val, setVal] = useState(0)
@@ -32,7 +32,6 @@ const STATUS_STYLE = {
 }
 
 export function Usage() {
-  const { api }  = useAuth()
   const [data, setData]     = useState(null)
   const [loading, setLoading] = useState(true)
   const [period, setPeriod] = useState('7d')

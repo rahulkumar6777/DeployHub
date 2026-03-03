@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { api } from '../api/apiclient' 
 
 // ── Helpers ───────────────────────────────────────────────
 function timeAgo(dateStr) {
@@ -57,7 +57,6 @@ function Skeleton({ w = 'w-24', h = 'h-3' }) {
 
 export default function Overview() {
   const { id: projectId } = useParams()
-  const { api }           = useAuth()
 
   const [project,   setProject]   = useState(null)
   const [lastBuild, setLastBuild] = useState(null)

@@ -24,7 +24,7 @@ function getInitials(name) {
 }
 
 export function Profile() {
-  const { user, api , fetchUser} = useAuth()
+  const { user , fetchUser} = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)

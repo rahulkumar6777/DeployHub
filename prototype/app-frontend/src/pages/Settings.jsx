@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { api } from '../api/apiclient' 
 
 // ── Helpers ───────────────────────────────────────────────
 function Section({ title, desc, children }) {
@@ -83,7 +83,6 @@ function Skeleton({ w = 'w-full', h = 'h-10' }) {
 export default function Settings() {
   const { id: projectId } = useParams()
   const navigate          = useNavigate()
-  const { api }           = useAuth()
 
   const [loading,  setLoading]  = useState(true)
   const [project,  setProject]  = useState(null)

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { api } from '../api/apiclient' 
 
 function Toast({ msg, type, onClose }) {
   useEffect(() => {
@@ -29,7 +29,6 @@ function Skeleton({ w, h }) {
 
 export default function Domains() {
   const { id: projectId } = useParams()
-  const { api }           = useAuth()
 
   const [project,    setProject]    = useState(null)
   const [loading,    setLoading]    = useState(true)

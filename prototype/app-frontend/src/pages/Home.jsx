@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { api } from '../api/apiclient' 
 
 // ── Animated counter ───────────────────────────────────────
 function Counter({ to, suffix = '' }) {
@@ -45,7 +46,7 @@ function buildWeekData(totalReq) {
 }
 
 export function Home() {
-  const { user, api }  = useAuth()
+  const { user }  = useAuth()
   const navigate       = useNavigate()
   const [stats, setStats]           = useState(null)
   const [recentProjects, setRecent] = useState([])

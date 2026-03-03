@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { api } from '../api/apiclient' 
 
 function timeAgo(d) {
   if (!d) return '—'
@@ -47,7 +47,6 @@ function SkeletonRow() {
 export default function Builds() {
   const { id: projectId } = useParams()
   const navigate = useNavigate()
-  const { api }  = useAuth()
 
   const [builds,  setBuilds]  = useState([])
   const [total,   setTotal]   = useState(0)

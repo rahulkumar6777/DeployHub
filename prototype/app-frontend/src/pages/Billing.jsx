@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { api } from '../api/apiclient' 
 
 const DISCOUNTS = [
   { months: 1,  discount: 0,  label: '1 Month'  },
@@ -36,7 +36,6 @@ function Skel({ w, h }) {
 
 export default function Billing() {
   const { id: projectId } = useParams()
-  const { api } = useAuth()
 
   const [project,   setProject]   = useState(null)
   const [orders,    setOrders]    = useState([])

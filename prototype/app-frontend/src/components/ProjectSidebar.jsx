@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation, useParams, useNavigate } from 'react-router-dom'
 import { useSidebar } from './SidebarContext'
-import { useAuth } from '../context/AuthContext'
+import { api } from '../api/apiclient' 
 
 // ── Icons ────────────────────────────────────────────────
 const BackIcon = () => (
@@ -118,7 +118,6 @@ export default function ProjectSidebar() {
   const navigate = useNavigate()
   const { isSidebarOpen, setIsSidebarOpen } = useSidebar()
   const location = useLocation()
-  const { api } = useAuth()
   const [projectName, setProjectName]     = useState(location.state?.projectName || '')
   const [plan, setPlan]                   = useState(null)
   const [bootstrapLoading, setBootstrap]  = useState(!location.state?.projectName)
