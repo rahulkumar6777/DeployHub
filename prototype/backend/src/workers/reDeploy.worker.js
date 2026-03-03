@@ -92,6 +92,10 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
                 newBuild.status = 'building';
                 await newBuild.save({ validateBeforeSave: false });
 
+                await Model.Project.findByIdAndUpdate(
+                    projectId,
+                    { $inc: { totalBuilds: 1 } }
+                );
 
                 //repofilepath
                 const baserepopath = 'builds'

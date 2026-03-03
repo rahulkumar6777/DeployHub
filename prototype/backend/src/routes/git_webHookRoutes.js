@@ -56,12 +56,6 @@ router.post(
       for (const project of projects) {
         if (project.owner.githubAccessToken) {
           project.status = "building";
-
-          await Model.Project.findByIdAndUpdate(
-            project._id,
-            { $inc: { totalBuilds: 1 } }
-          );
-
           await project.save({ validateBeforeSave: false });
 
           const projectId = project._id;

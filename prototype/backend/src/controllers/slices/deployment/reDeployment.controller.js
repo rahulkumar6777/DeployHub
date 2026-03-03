@@ -22,12 +22,6 @@ const reDeployment = async (req, res) => {
         }
 
         project.status = "building"
-
-        await Model.Project.findByIdAndUpdate(
-            projectid,
-            { $inc: { totalBuilds: 1 } }
-        );
-
         await project.save({ validateBeforeSave: false })
         const projectId = project._id
         await reDeploymentQueue.add('redeployment', projectId)
