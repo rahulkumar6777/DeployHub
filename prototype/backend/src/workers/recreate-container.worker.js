@@ -89,6 +89,10 @@ worker.on("active", async (job) => {
 })
 
 worker.on("completed", async (job) => {
+
+    await Model.Project.findByIdAndUpdate(job.data.projectId, {
+        status: "live"
+    })
     console.log("worker complete task of re-create container ", job.id)
 })
 
