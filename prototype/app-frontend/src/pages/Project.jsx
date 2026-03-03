@@ -47,14 +47,20 @@ function timeAgo(dateStr) {
 }
 
 function ProjectCard({ project, onMenuAction, actionLoading }) {
+  const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const isLive = project.status === 'live'
 
   return (
-    <div className="relative rounded-2xl overflow-hidden transition-all duration-200 hover:-translate-y-0.5"
+    <div className="relative rounded-2xl overflow-hidden transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
       style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
       onMouseEnter={e => e.currentTarget.style.border = '1px solid rgba(255,255,255,0.1)'}
-      onMouseLeave={e => e.currentTarget.style.border = '1px solid rgba(255,255,255,0.06)'}>
+      onMouseLeave={e => e.currentTarget.style.border = '1px solid rgba(255,255,255,0.06)'}
+      onClick={e => {
+        // Don't navigate if clicking menu, links or buttons inside card
+        if (e.target.closest('button') || e.target.closest('a')) return
+        navigate(`/project/${project._id}`)
+      }}>
 
       {/* Top accent */}
       <div className="h-px w-full" style={{
@@ -157,21 +163,14 @@ function ProjectCard({ project, onMenuAction, actionLoading }) {
         {/* Footer */}
         <div className="flex items-center justify-between pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
           <span className="text-[11px]" style={{ color: '#374151' }}>Updated {timeAgo(project.updatedAt)}</span>
-          <div className="flex gap-1">
-            {[
-              { label: 'Files',     to: `/project/${project._id}/files` },
-              { label: 'Analytics', to: `/project/${project._id}/analytics` },
-              { label: 'Settings',  to: `/project/${project._id}/settings` },
-            ].map(btn => (
-              <Link key={btn.label} to={btn.to}
-                className="text-[11px] font-medium px-2.5 py-1.5 rounded-lg transition-all"
-                style={{ color: '#4b5563', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-                onMouseEnter={e => { e.currentTarget.style.color = '#e5e7eb'; e.currentTarget.style.background = 'rgba(255,255,255,0.07)' }}
-                onMouseLeave={e => { e.currentTarget.style.color = '#4b5563'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}>
-                {btn.label}
-              </Link>
-            ))}
-          </div>
+          <Link to={`/project/${project._id}`}
+            onClick={e => e.stopPropagation()}
+            className="text-[11px] font-bold transition-colors flex items-center gap-1"
+            style={{ color: '#374151' }}
+            onMouseEnter={e => e.currentTarget.style.color = '#00e5ff'}
+            onMouseLeave={e => e.currentTarget.style.color = '#374151'}>
+            Open →
+          </Link>
         </div>
       </div>
     </div>

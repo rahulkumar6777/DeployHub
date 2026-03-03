@@ -1,8 +1,7 @@
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation, useParams, useNavigate } from 'react-router-dom'
 import { useSidebar } from './SidebarContext'
-import { useSelector } from 'react-redux'
-import { toast } from 'react-toastify'
+import { useAuth } from '../context/AuthContext'
 
 // ── Icons ────────────────────────────────────────────────
 const BackIcon = () => (
@@ -39,6 +38,30 @@ const KeyIcon = () => (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
       d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+  </svg>
+)
+const LogsIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
+      d="M9 12h6m-6 4h6M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8" />
+  </svg>
+)
+const BuildsIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
+      d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+  </svg>
+)
+const DomainIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
+      d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+  </svg>
+)
+const BillingIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
+      d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
   </svg>
 )
 
@@ -95,27 +118,50 @@ export default function ProjectSidebar() {
   const navigate = useNavigate()
   const { isSidebarOpen, setIsSidebarOpen } = useSidebar()
   const location = useLocation()
-  const { projects, loading: bootstrapLoading } = useSelector((state) => state.bootstrap)
-  const project = projects?.find((p) => p.id === projectId)
-  const projectName = project?.name || 'Project'
+  const { api } = useAuth()
+  const [projectName, setProjectName]     = useState(location.state?.projectName || '')
+  const [plan, setPlan]                   = useState(null)
+  const [bootstrapLoading, setBootstrap]  = useState(!location.state?.projectName)
 
   useEffect(() => {
-    if (!bootstrapLoading && projects?.length > 0 && !project) {
-      toast.error("Project not found or you don't have access.")
-      navigate('/')
-    }
-  }, [project, projects, bootstrapLoading, navigate])
+    if (!projectId) return
+    // Always verify — lightweight call, only name + plan
+    api.get(`/projects/${projectId}/meta`)
+      .then(res => {
+        setProjectName(res.data?.name || 'Project')
+        setPlan(res.data?.plan || null)
+      })
+      .catch(() => navigate('/projects'))
+      .finally(() => setBootstrap(false))
+  }, [projectId])
 
   const isActive = (path) => location.pathname === path
   const close = () => setIsSidebarOpen(false)
 
-  // Project nav links
-  const projectLinks = [
-    { to: `/project/${projectId}`,          label: 'Getting Started', icon: <HomeIcon /> },
-    { to: `/project/${projectId}/files`,     label: 'Files',           icon: <FilesIcon /> },
-    { to: `/project/${projectId}/analytics`, label: 'Analytics',       icon: <AnalyticsIcon /> },
-    { to: `/project/${projectId}/settings`,  label: 'Settings',        icon: <SettingsIcon /> },
-    { to: `/project/${projectId}/apikeys`,   label: 'API Keys',        icon: <KeyIcon /> },
+  // Project nav links — grouped
+  const navGroups = [
+    {
+      label: 'Project',
+      links: [
+        { to: `/project/${projectId}`,           label: 'Overview',  icon: <HomeIcon />     },
+        { to: `/project/${projectId}/logs`,       label: 'Logs',      icon: <LogsIcon />     },
+        { to: `/project/${projectId}/builds`,     label: 'Builds',    icon: <BuildsIcon />   },
+        { to: `/project/${projectId}/metrics`,    label: 'Metrics',   icon: <AnalyticsIcon />},
+      ],
+    },
+    {
+      label: 'Configuration',
+      links: [
+        { to: `/project/${projectId}/settings`,   label: 'Settings',  icon: <SettingsIcon /> },
+        { to: `/project/${projectId}/domains`,    label: 'Domains',   icon: <DomainIcon />, proBadge: plan === 'pro' },
+      ],
+    },
+    {
+      label: 'Account',
+      links: [
+        { to: `/project/${projectId}/billing`,    label: 'Billing',   icon: <BillingIcon />  },
+      ],
+    },
   ]
 
   if (bootstrapLoading) return <SidebarSkeleton isSidebarOpen={isSidebarOpen} />
@@ -154,20 +200,33 @@ export default function ProjectSidebar() {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          <div className="text-[10px] font-semibold text-gray-600 tracking-widest uppercase px-3 mb-2">
-            Project
-          </div>
-          {projectLinks.map(link => (
-            <NavItem
-              key={link.to}
-              to={link.to}
-              label={link.label}
-              icon={link.icon}
-              active={isActive(link.to)}
-              onClick={close}
-              state={{ projectName }}
-            />
+        <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-4">
+          {navGroups.map(group => (
+            <div key={group.label}>
+              <div className="text-[10px] font-semibold text-gray-600 tracking-widest uppercase px-3 mb-1">
+                {group.label}
+              </div>
+              <div className="space-y-0.5">
+                {group.links.map(link => (
+                  <div key={link.to} className="relative">
+                    <NavItem
+                      to={link.to}
+                      label={link.label}
+                      icon={link.icon}
+                      active={isActive(link.to)}
+                      onClick={close}
+                      state={{ projectName }}
+                    />
+                    {link.proBadge && (
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black px-1.5 py-0.5 rounded-md pointer-events-none"
+                        style={{ background: 'rgba(0,229,255,0.1)', color: '#00e5ff', border: '1px solid rgba(0,229,255,0.2)' }}>
+                        PRO
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
 

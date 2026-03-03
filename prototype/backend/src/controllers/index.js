@@ -12,6 +12,9 @@ import { getUserRepos } from "./slices/git/getUserRepo.controller.js";
 import { initPayment } from "./slices/Payments/init.controller.js";
 import { paymentVerify } from "./slices/Payments/verify.controller.js";
 import { initVerify, verify } from "./slices/Payments/verifyUser.js";
+import { getProjectMeta } from "./slices/Project/getProjectMeta.js";
+import { getProjectOverview } from "./slices/Project/getProjectOverview.js";
+import { deleteProject, getProjectSettings, updateBuildSettings, updateEnvSettings, updateGeneralSettings } from "./slices/Project/settings.js";
 import { getDashboardStats } from "./slices/user/dashboard.js";
 import { fullName } from "./slices/user/fullName.controller.js";
 import { Invoice } from "./slices/user/invoices.js";
@@ -50,5 +53,16 @@ export const contollers = {
     subscription: {
         init: initPayment,
         verfy: paymentVerify
+    },
+    Project: {
+        Meta: getProjectMeta,
+        overview: getProjectOverview,
+        settings: {
+            get: getProjectSettings,
+            updateGeneralSettings,
+            updateBuildSettings,
+            updateEnvSettings,
+            deleteProject
+        }
     }
 }

@@ -6,16 +6,11 @@ import { SidebarProvider } from '../components/SidebarContext'
 export default function ProjectLayout() {
   return (
     <SidebarProvider>
-      <div className="flex flex-col min-h-screen bg-[#050810] text-white">
-        {/* Top navbar spans full width */}
-        <TopNavbar />
-
-        {/* Below navbar: sidebar + page content */}
-        <div className="flex flex-1 pt-16">
-          <ProjectSidebar />
-
-          {/* Page content — offset for project sidebar */}
-          <main className="flex-1 md:ml-64 min-w-0 p-6">
+      <div className="flex min-h-screen bg-[#050810] text-white">
+        <ProjectSidebar />
+        <div className="flex-1 md:ml-64 flex flex-col min-h-screen">
+          <TopNavbar />
+          <main className="flex-1 pt-16 p-6" style={{ background: '#050810' }}>
             <Outlet />
           </main>
         </div>

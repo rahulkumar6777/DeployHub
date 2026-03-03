@@ -18,15 +18,15 @@ router.get('/auth/github/callback', contollers.Auth.githubCallback);
 
 // user
 router.get('/me', verifyJWT, contollers.user.me);
-router.post('/user/profile-pic' , upload.single('profilePic'), verifyJWT , contollers.user.profilePic)
-router.put('/user/fullname' , verifyJWT , contollers.user.fullName)
+router.post('/user/profile-pic', upload.single('profilePic'), verifyJWT, contollers.user.profilePic)
+router.put('/user/fullname', verifyJWT, contollers.user.fullName)
 router.post('/me/init', verifyJWT, contollers.user.initVerify);
 router.post('/me/verify', verifyJWT, contollers.user.verify);
-router.get('/invoice' , verifyJWT , contollers.user.Invoice);
-router.get('/user/gitrepos' , verifyJWT , contollers.user.getUserRepos)
-router.get('/projects' , verifyJWT , contollers.user.getUserProjects)
-router.get('/dashboard' , verifyJWT , contollers.user.getDashboardStats)
-router.get('/usage' , verifyJWT , contollers.user.getUsageStats)
+router.get('/invoice', verifyJWT, contollers.user.Invoice);
+router.get('/user/gitrepos', verifyJWT, contollers.user.getUserRepos)
+router.get('/projects', verifyJWT, contollers.user.getUserProjects)
+router.get('/dashboard', verifyJWT, contollers.user.getDashboardStats)
+router.get('/usage', verifyJWT, contollers.user.getUsageStats)
 
 
 // deployment routes
@@ -35,8 +35,18 @@ router.route('/redeploy/:projectId').post(verifyJWT, contollers.Deployment.reDep
 
 
 // subscription routes
-router.post('/subscription/init' , verifyJWT , contollers.subscription.init);
-router.post('/subscription/verify' , verifyJWT , contollers.subscription.verfy);
+router.post('/subscription/init', verifyJWT, contollers.subscription.init);
+router.post('/subscription/verify', verifyJWT, contollers.subscription.verfy);
+
+// proejct
+router.get('/projects/:id/meta', verifyJWT, contollers.Project.Meta)
+router.route('/projects/:id/overview').get(verifyJWT, contollers.Project.overview)
+router.get('/projects/:id/settings', verifyJWT, contollers.Project.settings.get)
+router.patch('/projects/:id/settings/general', verifyJWT, contollers.Project.settings.updateGeneralSettings)
+router.patch('/projects/:id/settings/build', verifyJWT, contollers.Project.settings.updateBuildSettings)
+router.patch('/projects/:id/settings/env', verifyJWT, contollers.Project.settings.updateEnvSettings)
+router.delete('/projects/:id', verifyJWT, contollers.Project.settings.deleteProject)
+
 
 
 export default router;
