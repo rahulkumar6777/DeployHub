@@ -34,18 +34,7 @@ app.use('/github-webhook', git_webHookRoutes)
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(
-    helmet.contentSecurityPolicy({
-        directives: {
-            defaultSrc: ["'self'"],
-            scriptSrc: [
-                "'self'",
-                "https://dashboard.deployhub.cloud",
-                "https://static.cloudflareinsights.com"
-            ],
-        },
-    })
-);
+app.use(helmet());
 
 
 import cookieParser from "cookie-parser";
