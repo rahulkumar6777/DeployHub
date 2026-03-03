@@ -2,12 +2,12 @@ import React, {
   createContext,
   useContext,
   useState,
-  useRef,
   useEffect,
+  useRef,
   useCallback,
 } from "react";
 import { useNavigate } from "react-router-dom";
-import { api, attachInterceptors } from "../api/apiclient";
+import { api, attachInterceptors } from "../api/apiClient";
 
 const AuthContext = createContext();
 
@@ -19,39 +19,47 @@ export const AuthProvider = ({ children }) => {
   const accessTokenRef = useRef(null);
   const navigate = useNavigate();
 
+  /* =====================================
+     Keep token ref synced
+  ===================================== */
   useEffect(() => {
     accessTokenRef.current = accessToken;
   }, [accessToken]);
 
-  /* ==============================
-     Fetch User
-  ============================== */
+  /* =====================================
+     Fetch current user
+  ===================================== */
   const fetchUser = useCallback(async () => {
-    const res = await api.get("/me");
-    setUser(res.data.data);
+    try {
+      const res = await api.get("/me");
+      setUser(res.data?.data || null);
+    } catch {
+      setUser(null);
+    }
   }, []);
 
-  /* ==============================
+  /* =====================================
      Refresh Access Token
-  ============================== */
+  ===================================== */
   const refreshAccessToken = useCallback(async () => {
     try {
       const res = await api.get("/refresh/refreshtoken");
       const token = res.data?.accessToken;
 
-      if (!token) throw new Error();
+      if (!token) throw new Error("No token returned");
 
       setAccessToken(token);
       await fetchUser();
+
       return token;
     } catch {
       return null;
     }
   }, [fetchUser]);
 
-  /* ==============================
+  /* =====================================
      Login
-  ============================== */
+  ===================================== */
   const login = async (email, password) => {
     const res = await api.post("/login", { email, password });
     const token = res.data?.accessToken;
@@ -60,12 +68,13 @@ export const AuthProvider = ({ children }) => {
 
     setAccessToken(token);
     await fetchUser();
+
     navigate("/", { replace: true });
   };
 
-  /* ==============================
-     Logout (HARD)
-  ============================== */
+  /* =====================================
+     Logout
+  ===================================== */
   const logout = async () => {
     try {
       await api.post("/logout");
@@ -73,20 +82,33 @@ export const AuthProvider = ({ children }) => {
 
     setAccessToken(null);
     setUser(null);
+
     navigate("/login", { replace: true });
   };
 
-  /* ==============================
+  /* =====================================
+     AUTO LOGIN (Run Once)
+  ===================================== */
+  useEffect(() => {
+    const init = async () => {
+      if (!accessTokenRef.current) {
+        await refreshAccessToken();
+      }
+      setIsAuthReady(true);
+    };
+
+    init();
+  }, [refreshAccessToken]);
+
+  /* =====================================
      Attach Interceptors Once
-  ============================== */
+  ===================================== */
   useEffect(() => {
     const eject = attachInterceptors(
       () => accessTokenRef.current,
       refreshAccessToken,
       logout
     );
-
-    setIsAuthReady(true);
 
     return eject;
   }, [refreshAccessToken]);
@@ -97,9 +119,9 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated: !!accessToken,
         isAuthReady,
         user,
+        fetchUser,
         login,
         logout,
-        fetchUser,
         refreshAccessToken,
       }}
     >
