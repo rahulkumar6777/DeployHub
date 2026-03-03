@@ -13,8 +13,10 @@ const reDeployment = async (req, res) => {
         }
 
 
-        const project = await Model.Project.findById(projectid);
-        console.log(project)
+        const project = await Model.Project.findOne({
+            _id: projectid,
+            status: { $ne: 'deleted' }
+        });
         if (!project) {
             return res.status(404).json({
                 message: "Invalid ProjectId"

@@ -47,7 +47,7 @@ router.post(
 
       const repoUrl = payload.repository.clone_url.replace(/\.git$/, "");
 
-      const projects = await Model.Project.find({ repoLink: repoUrl }).populate('owner');
+      const projects = await Model.Project.find({ repoLink: repoUrl, status: { $ne: 'deleted' }, }).populate('owner');
 
       if (!projects || projects.length === 0) {
         return res.send("No projects found");
