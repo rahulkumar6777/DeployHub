@@ -17,6 +17,7 @@ import Overview from "./pages/Overview";
 import Settings from "./pages/Settings";
 import Builds from "./pages/Builds";
 import BuildLogs from "./pages/BuildsLogs";
+import Domains from "./pages/Domain";
 
 function Protected({ children }) {
   const { isAuthenticated, isAuthReady } = useAuth();
@@ -37,28 +38,28 @@ export default function App() {
     <Routes>
 
       {/* ── Public ── */}
-      <Route path="/login"  element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
 
       {/* ── Main dashboard layout ── */}
       <Route element={<ProtectedWithGate><PrivateLayout /></ProtectedWithGate>}>
-        <Route path="/"         element={<Home />} />
+        <Route path="/" element={<Home />} />
         <Route path="/projects" element={<Projects />} />
-        <Route path="/usage"    element={<Usage />} />
-        <Route path="/profile"  element={<Profile />} />
+        <Route path="/usage" element={<Usage />} />
+        <Route path="/profile" element={<Profile />} />
         <Route path="/:type/new" element={<NewDeployment />} />
       </Route>
 
       {/* ── Project layout (sidebar with project nav) ── */}
       <Route element={<ProtectedWithGate><ProjectLayout /></ProtectedWithGate>}>
-        <Route path="/project/:id"          element={<Overview />} />
-        <Route path="/project/:id/logs"     element={<div className="text-white p-4">Logs — coming soon</div>} />
-        <Route path="/project/:id/builds"   element={<Builds />} />
-        <Route path="/project/:id/logs/:buildId"     element={<BuildLogs />} />
-        <Route path="/project/:id/metrics"  element={<div className="text-white p-4">Metrics — coming soon</div>} />
-        <Route path="/project/:id/settings" element={ <Settings/> }/>
-        <Route path="/project/:id/domains"  element={<div className="text-white p-4">Domains — coming soon</div>} />
-        <Route path="/project/:id/billing"  element={<Billing/>} />
+        <Route path="/project/:id" element={<Overview />} />
+        <Route path="/project/:id/logs" element={<div className="text-white p-4">Logs — coming soon</div>} />
+        <Route path="/project/:id/builds" element={<Builds />} />
+        <Route path="/project/:id/logs/:buildId" element={<BuildLogs />} />
+        <Route path="/project/:id/metrics" element={<div className="text-white p-4">Metrics — coming soon</div>} />
+        <Route path="/project/:id/settings" element={<Settings />} />
+        <Route path="/project/:id/domains" element={<Domains />} />
+        <Route path="/project/:id/billing" element={<Billing />} />
       </Route>
 
       {/* ── Verify ── */}

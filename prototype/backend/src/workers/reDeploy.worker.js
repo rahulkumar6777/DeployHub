@@ -374,13 +374,13 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
         }
 
         // Create new deployment record
-        const deploymentData = new Model.deploymentModel({
-            project: projectId,
-            build: targetBuildId,
-            dockerImage: imageName,
-            status: "deploying",
-        });
-        await deploymentData.save();
+        // const deploymentData = new Model.deploymentModel({
+        //     project: projectId,
+        //     build: targetBuildId,
+        //     dockerImage: imageName,
+        //     status: "deploying",
+        // });
+        // await deploymentData.save();
 
         // Prepare ENV
         const envVariables = [];
@@ -402,10 +402,10 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
 
             await container.start();
 
-            deploymentData.status = "live";
-            deploymentData.containerId = container.id;
-            deploymentData.deployedAt = new Date();
-            await deploymentData.save({ validateBeforeSave: false });
+            // deploymentData.status = "live";
+            // deploymentData.containerId = container.id;
+            // deploymentData.deployedAt = new Date();
+            // await deploymentData.save({ validateBeforeSave: false });
         }
 
         // ---------------- NODE ----------------
@@ -423,10 +423,10 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
 
             await container.start();
 
-            deploymentData.status = "live";
-            deploymentData.containerId = container.id;
-            deploymentData.deployedAt = new Date();
-            await deploymentData.save({ validateBeforeSave: false });
+            // deploymentData.status = "live";
+            // deploymentData.containerId = container.id;
+            // deploymentData.deployedAt = new Date();
+            // await deploymentData.save({ validateBeforeSave: false });
         }
 
         console.log("Redeployment successful");

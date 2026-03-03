@@ -6,5 +6,6 @@ const reDeploymentQueue = makeQueue('redeployment');
 const subscriptionStart = makeQueue("deployhub-subscriptionstart")
 const subscriptionExpire = makeQueue("deployhub-subscriptionend")
 const isBeforeExpiryNotify = makeQueue("deployhub-isBeforeExpiryQueue")
+const recreateContainer = makeQueue("deployhub-recreate-container")
 
-export { buildqueue, deploymentQueue , reDeploymentQueue  , isBeforeExpiryNotify , subscriptionExpire , subscriptionStart}
+export { buildqueue, recreateContainer, deploymentQueue, reDeploymentQueue, isBeforeExpiryNotify, subscriptionExpire, subscriptionStart }

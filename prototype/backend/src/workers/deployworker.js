@@ -16,14 +16,14 @@ const worker = new Worker("deploymentQueue", async (job) => {
 
         const imageName = `${dockerusername}/${projectId.toString().toLowerCase()}:${buildId.toString().toLowerCase()}`;
 
-        const deploymentData = new Model.deploymentModel({
-            project: projectId,
-            build: projectData.buildId,
-            dockerImage: imageName,
-            status: 'deploying'
-        })
+        // const deploymentData = new Model.deploymentModel({
+        //     project: projectId,
+        //     build: projectData.buildId,
+        //     dockerImage: imageName,
+        //     status: 'deploying'
+        // })
 
-        await deploymentData.save();
+        // await deploymentData.save();
 
         if (projectData.projectType === 'static') {
 
@@ -47,10 +47,10 @@ const worker = new Worker("deploymentQueue", async (job) => {
 
             await container.start();
 
-            deploymentData.status = 'live';
-            deploymentData.containerId = container.id;
-            deploymentData.deployedAt = new Date();
-            await deploymentData.save({ validateBeforeSave: false });
+            // deploymentData.status = 'live';
+            // deploymentData.containerId = container.id;
+            // deploymentData.deployedAt = new Date();
+            // await deploymentData.save({ validateBeforeSave: false });
 
         }
 
@@ -81,11 +81,11 @@ const worker = new Worker("deploymentQueue", async (job) => {
 
             await container.logs({ stdout: true, stderr: true })
 
-            deploymentData.status = 'live';
-            deploymentData.containerId = container.id;
-            deploymentData.deployedAt = new Date();
+            // deploymentData.status = 'live';
+            // deploymentData.containerId = container.id;
+            // deploymentData.deployedAt = new Date();
 
-            await deploymentData.save({ validateBeforeSave: false });
+            // await deploymentData.save({ validateBeforeSave: false });
         }
         console.log(`Container for project ${projectId} started successfully.`);
 
@@ -150,5 +150,5 @@ worker.on("failed", async (job, err) => {
     await projectData.save({ validateBeforeSave: false })
     console.log(`Deployment job ${job.id} failed with error: ${err.message}`);
 
-    await Model.deploymentModel.findOneAndUpdate({ build: job.data.buildId }, { status: 'failed', deployedAt: new Date() }, { validateBeforeSave: false });
+    // await Model.deploymentModel.findOneAndUpdate({ build: job.data.buildId }, { status: 'failed', deployedAt: new Date() }, { validateBeforeSave: false });
 });
