@@ -22,7 +22,7 @@ const reDeployment = async (req, res) => {
         }
 
         project.status = "building"
-        project.totalBuilds= +1;
+        project.totalBuilds += 1;
         await project.save({validateBeforeSave: false})
         const projectId = project._id
         await reDeploymentQueue.add('redeployment', projectId)
