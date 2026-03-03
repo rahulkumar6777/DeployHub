@@ -1,432 +1,281 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { PLAN_LIMITS } from '../constant/planLimits'
 
-const DURATION_LABELS = {
-  1: '1 Month', 3: '3 Months', 6: '6 Months', 12: '1 Year', 24: '2 Years'
+const DISCOUNTS = [
+  { months: 1,  discount: 0,  label: '1 Month'  },
+  { months: 3,  discount: 4,  label: '3 Months' },
+  { months: 6,  discount: 8,  label: '6 Months' },
+  { months: 12, discount: 10, label: '1 Year'   },
+  { months: 24, discount: 15, label: '2 Years'  },
+]
+const BASE = 799
+
+function daysLeft(d) {
+  if (!d) return null
+  return Math.ceil((new Date(d).getTime() - Date.now()) / 86400000)
+}
+function fmtDate(d) {
+  if (!d) return 'N/A'
+  return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+function timeAgo(d) {
+  const diff = Date.now() - new Date(d).getTime()
+  const days = Math.floor(diff / 86400000)
+  if (days < 1)  return 'today'
+  if (days < 30) return days + 'd ago'
+  const mo = Math.floor(days / 30)
+  if (mo < 12)   return mo + 'mo ago'
+  return Math.floor(mo / 12) + 'yr ago'
 }
 
-function StatusBadge({ status }) {
-  const map = {
-    completed:    { bg: 'rgba(52,211,153,0.08)',  color: '#34d399', border: 'rgba(52,211,153,0.2)',  label: 'Paid' },
-    pending: { bg: 'rgba(245,158,11,0.08)', color: '#f59e0b', border: 'rgba(245,158,11,0.2)', label: 'Pending' },
-    failed:  { bg: 'rgba(248,113,113,0.08)', color: '#f87171', border: 'rgba(248,113,113,0.2)', label: 'Failed' },
-    refunded:  { bg: 'rgba(248,113,113,0.08)', color: '#250ce742', border: 'rgba(244,189,113,0.2)', label: 'Failed' },
-  }
-  const s = map[status?.toLowerCase()] || map.pending
-  return (
-    <span className="text-[10px] font-bold px-2.5 py-1 rounded-full"
-      style={{ background: s.bg, color: s.color, border: `1px solid ${s.border}` }}>
-      {s.label}
-    </span>
-  )
+function Skel({ w, h }) {
+  return <div className={(w||'w-full')+' '+(h||'h-4')+' rounded-lg animate-pulse'}
+    style={{background:'rgba(255,255,255,0.06)'}}/>
 }
 
-// Helper function to format dates
-function formatDate(dateString) {
-  if (!dateString) return '—'
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
-}
+export default function Billing() {
+  const { id: projectId } = useParams()
+  const { api } = useAuth()
 
-// Helper function to calculate days remaining
-function getDaysRemaining(endDate) {
-  if (!endDate) return null
-  const end = new Date(endDate)
-  const now = new Date()
-  const diffTime = end - now
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  return diffDays
-}
-
-export function Billing() {
-  const { user, api } = useAuth()
-  const [invoices, setInvoices] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [currentInvoice, setCurrentInvoice] = useState(null)
-
-  const subscription = user?.subscriptionid
-  const currentPlan = subscription?.plan || 'free'
-  const limits = PLAN_LIMITS[currentPlan]
-
-  // Find the current invoice that matches the subscription paymentId
-  useEffect(() => {
-    if (invoices.length > 0 && subscription?.paymentId) {
-      const current = invoices.find(inv => inv._id === subscription.paymentId)
-      setCurrentInvoice(current || null)
-    }
-  }, [invoices, subscription?.paymentId])
+  const [project,   setProject]   = useState(null)
+  const [orders,    setOrders]    = useState([])
+  const [loading,   setLoading]   = useState(true)
+  const [selMonths, setSelMonths] = useState(1)
 
   useEffect(() => {
-    async function fetchInvoices() {
-      try {
-        const res = await api.get('/invoice')
-        if (!res.status === 200) throw new Error('Failed to fetch')
-        const data = res.data.data
-        setInvoices(Array.isArray(data) ? data : [])
-      } catch (e) {
-        setError(e.message)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchInvoices()
-  }, [])
+    api.get('/projects/' + projectId + '/billing')
+      .then(r => { setProject(r.data.project); setOrders(r.data.orders || []) })
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [projectId])
 
-  // Calculate subscription status
-  const daysRemaining = subscription?.endDate ? getDaysRemaining(subscription.endDate) : null
-  const isExpired = daysRemaining !== null && daysRemaining <= 0
-  const isExpiringSoon = daysRemaining !== null && daysRemaining > 0 && daysRemaining <= 7
-  const shouldShowRenewButton = daysRemaining !== null && daysRemaining <= 10 && daysRemaining > 0 && currentPlan !== 'free'
+  const isPro      = project?.plan === 'pro'
+  const days       = daysLeft(project?.endDate)
+  const isExpiring = days !== null && days <= 7 && days > 0
+  const isExpired  = days !== null && days <= 0
+  const disc       = DISCOUNTS.find(d => d.months === selMonths)
+  const perMonth   = Math.round(BASE * (1 - (disc?.discount || 0) / 100))
+  const total      = perMonth * selMonths
+  const saved      = BASE * selMonths - total
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto' }} className="space-y-6">
+    <div style={{maxWidth:'720px',margin:'0 auto'}} className="space-y-5 pb-10">
 
-      {/* Header */}
       <div>
-        <p className="text-xs font-bold tracking-[0.15em] uppercase mb-1.5" style={{ color: '#00e5ff' }}>Billing</p>
-        <h1 className="font-syne font-black text-[28px] text-white leading-none">Billing & Invoices</h1>
+        <p className="text-xs font-bold tracking-[0.15em] uppercase mb-1.5" style={{color:'#00e5ff'}}>Billing</p>
+        <h1 className="font-syne font-black text-[26px] text-white leading-none">Project Billing</h1>
       </div>
 
-      {/* Current plan card with subscription details */}
-      <div className="rounded-2xl p-5"
-        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-        
-        {/* Main plan info */}
-        <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: 'rgba(0,229,255,0.08)', border: '1px solid rgba(0,229,255,0.12)' }}>
-              <svg className="w-5 h-5" style={{ color: '#00e5ff' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
-                  d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-              </svg>
+      {/* Current Plan */}
+      <div className="rounded-2xl overflow-hidden"
+        style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.06)'}}>
+        <div className="px-6 py-4" style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+          <h2 className="font-syne font-bold text-white text-[15px]">Current Plan</h2>
+          <p className="text-xs mt-0.5" style={{color:'#4b5563'}}>Your active subscription for this project</p>
+        </div>
+        <div className="p-6">
+          {loading ? (
+            <div className="space-y-3">
+              <Skel w="w-32" h="h-8"/><Skel w="w-48" h="h-4"/><Skel w="w-40" h="h-4"/>
             </div>
-            <div>
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="font-syne font-black text-white capitalize">{currentPlan} Plan</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                  style={{ 
-                    background: isExpired ? 'rgba(248,113,113,0.08)' : 'rgba(52,211,153,0.08)', 
-                    color: isExpired ? '#f87171' : '#34d399', 
-                    border: `1px solid ${isExpired ? 'rgba(248,113,113,0.15)' : 'rgba(52,211,153,0.15)'}` 
-                  }}>
-                  {isExpired ? 'Expired' : 'Active'}
-                </span>
-                
-                {/* Show expiring soon badge */}
-                {isExpiringSoon && !isExpired && (
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                    style={{ 
-                      background: 'rgba(245,158,11,0.08)', 
-                      color: '#f59e0b', 
-                      border: '1px solid rgba(245,158,11,0.15)' 
+          ) : (
+            <div className="flex items-start justify-between gap-6 flex-wrap">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <span className="font-syne font-black text-3xl text-white">{isPro ? 'Pro' : 'Free'}</span>
+                  <span className="text-[11px] font-black uppercase px-2 py-1 rounded-lg"
+                    style={{
+                      background: isPro ? 'rgba(0,229,255,0.08)' : 'rgba(255,255,255,0.04)',
+                      color:      isPro ? '#00e5ff' : '#4b5563',
+                      border:     isPro ? '1px solid rgba(0,229,255,0.2)' : '1px solid transparent',
                     }}>
-                    Expiring Soon
+                    {isPro ? 'Active' : 'Free Tier'}
                   </span>
+                </div>
+                {isPro ? (
+                  <div className="space-y-1.5 text-sm">
+                    {[
+                      {label:'Started',   val: fmtDate(project.startDate), color:'#fff'},
+                      {label:'Renews',    val: fmtDate(project.endDate),   color:'#fff'},
+                      {label:'Days left', val: isExpired ? 'Expired' : days+' days',
+                        color: isExpiring||isExpired ? '#f87171' : '#34d399'},
+                    ].map(r => (
+                      <div key={r.label} className="flex items-center gap-2">
+                        <span style={{color:'#4b5563'}}>{r.label}:</span>
+                        <span className="font-medium" style={{color:r.color}}>{r.val}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-1 text-sm" style={{color:'#4b5563'}}>
+                    <p>2,000 requests /days</p>
+                    <p>512 MB RAM · 0.1 vCPU</p>
+                    <p>nesthost.app subdomain only</p>
+                  </div>
                 )}
               </div>
-              <p className="text-xs" style={{ color: '#374151' }}>
-                {limits.projects} projects · {limits.requests.toLocaleString()} req/mo · {limits.ram}MB RAM
-              </p>
-            </div>
-          </div>
-          
-          {/* Right side buttons/price */}
-          {currentPlan === 'free' ? (
-            <Link to="/billing/upgrade"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm text-black transition-all hover:scale-105"
-              style={{ background: 'linear-gradient(135deg, #00e5ff, #00b8cc)', boxShadow: '0 4px 16px rgba(0,229,255,0.2)' }}>
-              Upgrade to Pro →
-            </Link>
-          ) : (
-            <div className="flex items-center gap-3">
-              {/* Renew button - shown when less than 10 days remaining */}
-              {shouldShowRenewButton && (
-                <Link 
-                  to="/billing/renew"
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm text-black transition-all hover:scale-105 animate-pulse"
-                  style={{ 
-                    background: 'linear-gradient(135deg, #f59e0b, #d97706)', 
-                    boxShadow: '0 4px 16px rgba(245,158,11,0.3)'
-                  }}>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  Renew Now ({daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} left)
-                </Link>
-              )}
-              <div className="text-right">
-                <div className="font-syne font-black text-lg text-white">₹{currentInvoice?.amount ? (currentInvoice.amount / 100).toLocaleString() : '799'}<span className="text-sm font-normal" style={{ color: '#374151' }}>/mo</span></div>
+              <div className="text-sm space-y-1.5" style={{color:'#4b5563'}}>
+                <p className="text-white font-bold text-xs mb-2">{isPro ? 'Pro includes' : 'Free includes'}</p>
+                {(isPro
+                  ? ['1,00,000 req/day','2 GB RAM','1 vCPU','Custom Domain','Priority Support']
+                  : ['2,000 req/day','512 MB RAM','0.1 vCPU','Shared infra']
+                ).map(f => (
+                  <div key={f} className="flex items-center gap-2">
+                    <span style={{color: isPro ? '#34d399' : '#374151'}}>✓</span>
+                    <span>{f}</span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
         </div>
-
-        {/* Subscription details - only show for paid plans */}
-        {currentPlan !== 'free' && subscription && (
-          <div className="mt-4 pt-4 grid grid-cols-1 sm:grid-cols-3 gap-4"
-            style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            
-            {/* Start Date */}
-            <div>
-              <p className="text-[10px] font-bold tracking-[0.1em] uppercase mb-1" style={{ color: '#374151' }}>
-                Started On
-              </p>
-              <p className="text-sm text-white font-medium">
-                {formatDate(subscription.startDate || subscription.createdAt)}
-              </p>
-            </div>
-
-            {/* End Date / Expiry */}
-            <div>
-              <p className="text-[10px] font-bold tracking-[0.1em] uppercase mb-1" style={{ color: '#374151' }}>
-                {isExpired ? 'Expired On' : 'Expires On'}
-              </p>
-              <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-sm text-white font-medium">
-                  {formatDate(subscription.endDate)}
-                </p>
-                {!isExpired && daysRemaining !== null && (
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                    style={{ 
-                      background: daysRemaining <= 10 ? 'rgba(245,158,11,0.08)' : 'rgba(52,211,153,0.08)', 
-                      color: daysRemaining <= 10 ? '#f59e0b' : '#34d399', 
-                      border: `1px solid ${daysRemaining <= 10 ? 'rgba(245,158,11,0.15)' : 'rgba(52,211,153,0.15)'}` 
-                    }}>
-                    {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} left
-                  </span>
-                )}
-                
-                {/* Small renew link for mobile/compact view */}
-                {shouldShowRenewButton && (
-                  <Link 
-                    to="/billing/renew"
-                    className="text-[10px] font-bold px-2 py-0.5 rounded-full sm:hidden"
-                    style={{ 
-                      background: 'rgba(245,158,11,0.08)', 
-                      color: '#f59e0b', 
-                      border: '1px solid rgba(245,158,11,0.15)' 
-                    }}>
-                    Renew
-                  </Link>
-                )}
-              </div>
-            </div>
-
-            {/* Current Invoice / Payment Info */}
-            <div>
-              <p className="text-[10px] font-bold tracking-[0.1em] uppercase mb-1" style={{ color: '#374151' }}>
-                Current Payment
-              </p>
-              {currentInvoice ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-white font-medium">
-                    ₹{(currentInvoice.amount / 100).toLocaleString()}
-                  </span>
-                  <StatusBadge status={currentInvoice.status} />
-                </div>
-              ) : (
-                <p className="text-sm" style={{ color: '#6b7280' }}>
-                  Invoice #{subscription.paymentId?.slice(-8) || '—'}
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Show purchase date for free plan if they had previous subscription */}
-        {currentPlan === 'free' && subscription && (
-          <div className="mt-4 pt-4"
-            style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            <p className="text-[10px] font-bold tracking-[0.1em] uppercase mb-1" style={{ color: '#374151' }}>
-              Previous Subscription Ended
-            </p>
-            <p className="text-sm text-white font-medium">
-              {formatDate(subscription.endDate)}
-            </p>
-          </div>
-        )}
       </div>
 
-      {/* Renewal reminder banner - shows when 5-10 days remaining */}
-      {shouldShowRenewButton && daysRemaining <= 10 && daysRemaining > 5 && (
-        <div className="rounded-2xl p-4 flex items-center justify-between flex-wrap gap-3"
-          style={{ 
-            background: 'rgba(245,158,11,0.05)', 
-            border: '1px solid rgba(245,158,11,0.15)'
-          }}>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: 'rgba(245,158,11,0.1)' }}>
-              <svg className="w-4 h-4" style={{ color: '#f59e0b' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-white">Your plan expires in {daysRemaining} days</p>
-              <p className="text-xs" style={{ color: '#6b7280' }}>Renew now to avoid service interruption</p>
-            </div>
+      {/* Expiry warning */}
+      {!loading && (isExpiring || isExpired) && (
+        <div className="px-4 py-3.5 rounded-xl flex items-start gap-3"
+          style={{background:'rgba(248,113,113,0.07)',border:'1px solid rgba(248,113,113,0.2)'}}>
+          <span className="text-base mt-0.5">⚠️</span>
+          <div>
+            <p className="text-sm font-bold" style={{color:'#f87171'}}>
+              {isExpired ? 'Plan Expired' : 'Expiring in '+days+' day'+(days===1?'':'s')}
+            </p>
+            <p className="text-xs mt-0.5" style={{color:'#4b5563'}}>
+              {isExpired
+                ? 'Your project has been downgraded to Free. Renew to restore Pro features.'
+                : 'Renew now to avoid interruption to your Pro features.'}
+            </p>
           </div>
-          <Link 
-            to="/billing/renew"
-            className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs text-black transition-all hover:scale-105"
-            style={{ 
-              background: 'linear-gradient(135deg, #f59e0b, #d97706)', 
-              boxShadow: '0 4px 12px rgba(245,158,11,0.2)'
-            }}>
-            Renew Subscription →
-          </Link>
         </div>
       )}
 
-      {/* Expired banner */}
-      {isExpired && currentPlan !== 'free' && (
-        <div className="rounded-2xl p-4 flex items-center justify-between flex-wrap gap-3"
-          style={{ 
-            background: 'rgba(248,113,113,0.05)', 
-            border: '1px solid rgba(248,113,113,0.15)'
-          }}>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: 'rgba(248,113,113,0.1)' }}>
-              <svg className="w-4 h-4" style={{ color: '#f87171' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-white">Your plan has expired</p>
-              <p className="text-xs" style={{ color: '#6b7280' }}>Renew now to continue using Pro features</p>
-            </div>
-          </div>
-          <Link 
-            to="/billing/renew"
-            className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs text-black transition-all hover:scale-105"
-            style={{ 
-              background: 'linear-gradient(135deg, #00e5ff, #00b8cc)', 
-              boxShadow: '0 4px 12px rgba(0,229,255,0.2)'
-            }}>
-            Reactivate Subscription →
-          </Link>
-        </div>
-      )}
-
-      {/* Invoice table */}
+      {/* Upgrade / Renew */}
       <div className="rounded-2xl overflow-hidden"
-        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-
-        {/* Table header */}
-        <div className="px-5 py-3 grid grid-cols-4 gap-4"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          {['Order ID', 'Plan', 'Duration', 'Amount', 'Status'].map(h => (
-            <span key={h} className="text-[10px] font-black tracking-[0.12em] uppercase hidden sm:block first:block last:block"
-              style={{ color: '#374151' }}>{h}</span>
-          ))}
+        style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.06)'}}>
+        <div className="px-6 py-4" style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+          <h2 className="font-syne font-bold text-white text-[15px]">{isPro ? 'Renew Plan' : 'Upgrade to Pro'}</h2>
+          <p className="text-xs mt-0.5" style={{color:'#4b5563'}}>
+            {isPro ? 'Extend your subscription' : 'Unlock more power for this project'}
+          </p>
         </div>
-
-        {/* Loading */}
-        {loading && (
-          <div className="flex items-center justify-center py-16 gap-3">
-            <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin"
-              style={{ borderColor: 'rgba(0,229,255,0.3)', borderTopColor: '#00e5ff' }} />
-            <span className="text-sm" style={{ color: '#374151' }}>Loading invoices...</span>
-          </div>
-        )}
-
-        {/* Error */}
-        {error && !loading && (
-          <div className="flex items-center justify-center py-16">
-            <span className="text-sm" style={{ color: '#f87171' }}>Failed to load invoices</span>
-          </div>
-        )}
-
-        {/* Empty */}
-        {!loading && !error && invoices.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <svg className="w-5 h-5" style={{ color: '#374151' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
+        <div className="p-6 space-y-5">
+          <div>
+            <p className="text-xs font-bold text-white mb-3">Select Duration</p>
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+              {DISCOUNTS.map(d => {
+                const price = Math.round(BASE * (1 - d.discount / 100))
+                const sel   = selMonths === d.months
+                return (
+                  <button key={d.months} onClick={() => setSelMonths(d.months)}
+                    className="rounded-xl p-3 text-center transition-all"
+                    style={{
+                      background: sel ? 'rgba(0,229,255,0.08)' : 'rgba(255,255,255,0.02)',
+                      border:     sel ? '1px solid rgba(0,229,255,0.3)' : '1px solid rgba(255,255,255,0.06)',
+                    }}>
+                    <div className="text-xs font-bold text-white">{d.label}</div>
+                    <div className="text-[10px] mt-0.5" style={{color: sel ? '#00e5ff' : '#4b5563'}}>
+                      ₹{price}/mo
+                    </div>
+                    {d.discount > 0 && (
+                      <div className="text-[9px] font-black mt-1 px-1.5 py-0.5 rounded-full inline-block"
+                        style={{background:'rgba(52,211,153,0.1)',color:'#34d399'}}>
+                        -{d.discount}%
+                      </div>
+                    )}
+                  </button>
+                )
+              })}
             </div>
-            <p className="text-sm font-medium text-white mb-1">No invoices yet</p>
-            <p className="text-xs" style={{ color: '#374151' }}>Your payment history will appear here.</p>
           </div>
-        )}
 
-        {/* Rows */}
-        {!loading && !error && invoices.map((inv, i) => {
-          // Check if this invoice is the current one
-          const isCurrentInvoice = subscription?.paymentId === inv._id
-          
-          return (
-            <div key={inv.orderid || i}
-              className="px-5 py-4 grid grid-cols-4 sm:grid-cols-5 gap-4 items-center transition-colors relative"
-              style={{ 
-                borderBottom: i < invoices.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
-                background: isCurrentInvoice ? 'rgba(0,229,255,0.02)' : 'transparent'
-              }}
-              onMouseEnter={e => e.currentTarget.style.background = isCurrentInvoice ? 'rgba(0,229,255,0.03)' : 'rgba(255,255,255,0.015)'}
-              onMouseLeave={e => e.currentTarget.style.background = isCurrentInvoice ? 'rgba(0,229,255,0.02)' : 'transparent'}>
-
-              {/* Current invoice indicator */}
-              {isCurrentInvoice && (
-                <div className="absolute left-0 top-0 bottom-0 w-0.5"
-                  style={{ background: '#00e5ff' }} />
-              )}
-
-              {/* Order ID */}
-              <div className="min-w-0">
-                <span className="text-xs font-mono" style={{ color: '#4b5563' }}>
-                  #{inv.orderid?.slice(-8) || '—'}
-                </span>
-                {isCurrentInvoice && (
-                  <span className="ml-2 text-[8px] font-bold px-1.5 py-0.5 rounded-full"
-                    style={{ background: 'rgba(0,229,255,0.1)', color: '#00e5ff' }}>
-                    Current
-                  </span>
-                )}
-              </div>
-
-              {/* Plan */}
-              <div className="hidden sm:block">
-                <span className="text-sm font-semibold capitalize text-white">{inv.plan || '—'}</span>
-              </div>
-
-              {/* Duration */}
-              <div className="hidden sm:block">
-                <span className="text-sm" style={{ color: '#6b7280' }}>
-                  {DURATION_LABELS[inv.months] || `${inv.months} mo`}
-                </span>
-              </div>
-
-              {/* Amount */}
-              <div>
-                <span className="font-syne font-bold text-white">
-                  ₹{inv.amount ? (inv.amount / 100).toLocaleString() : '—'}
-                </span>
-              </div>
-
-              {/* Status */}
-              <div>
-                <StatusBadge status={inv.status} />
-              </div>
+          {/* Summary */}
+          <div className="rounded-xl p-4 space-y-2"
+            style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.05)'}}>
+            <div className="flex justify-between text-sm">
+              <span style={{color:'#4b5563'}}>₹{BASE} × {selMonths} mo</span>
+              <span style={{color:'#4b5563'}}>₹{(BASE*selMonths).toLocaleString()}</span>
             </div>
-          )
-        })}
+            {saved > 0 && (
+              <div className="flex justify-between text-sm">
+                <span style={{color:'#34d399'}}>Discount ({disc?.discount}%)</span>
+                <span style={{color:'#34d399'}}>-₹{saved.toLocaleString()}</span>
+              </div>
+            )}
+            <div className="flex justify-between font-bold text-base pt-2"
+              style={{borderTop:'1px solid rgba(255,255,255,0.05)'}}>
+              <span className="text-white">Total</span>
+              <span style={{color:'#00e5ff'}}>₹{total.toLocaleString()}</span>
+            </div>
+          </div>
+
+          {/* Pay btn — disabled, wire later */}
+          <button disabled
+            className="w-full py-3 rounded-xl font-bold text-sm opacity-50 cursor-not-allowed flex items-center justify-center gap-2"
+            style={{background:'linear-gradient(135deg,#00e5ff,#00b8cc)',color:'#000'}}>
+            {isPro ? 'Renew Pro' : 'Upgrade to Pro'} — ₹{total.toLocaleString()}
+            <span className="text-[10px] opacity-60">(Payment coming soon)</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Payment History */}
+      <div className="rounded-2xl overflow-hidden"
+        style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.06)'}}>
+        <div className="px-6 py-4" style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+          <h2 className="font-syne font-bold text-white text-[15px]">Payment History</h2>
+          <p className="text-xs mt-0.5" style={{color:'#4b5563'}}>All transactions for this project</p>
+        </div>
+        <div className="p-6">
+          {loading ? (
+            <div className="space-y-3">
+              {[1,2].map(i => (
+                <div key={i} className="flex items-center gap-4">
+                  <Skel w="w-9" h="h-9"/>
+                  <div className="flex-1 space-y-1.5"><Skel w="w-36" h="h-3"/><Skel w="w-24" h="h-2.5"/></div>
+                  <Skel w="w-16" h="h-3"/>
+                </div>
+              ))}
+            </div>
+          ) : orders.length === 0 ? (
+            <p className="text-sm text-center py-6" style={{color:'#374151'}}>No payment history yet</p>
+          ) : (
+            <div className="space-y-2">
+              {orders.map(order => (
+                <div key={order._id}
+                  className="flex items-center gap-4 px-4 py-3 rounded-xl"
+                  style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.04)'}}>
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-sm"
+                    style={{
+                      background: order.status==='paid' ? 'rgba(52,211,153,0.08)' : 'rgba(248,113,113,0.08)',
+                      border:     order.status==='paid' ? '1px solid rgba(52,211,153,0.2)' : '1px solid rgba(248,113,113,0.2)',
+                      color:      order.status==='paid' ? '#34d399' : '#f87171',
+                    }}>
+                    {order.status==='paid' ? '✓' : '✕'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-bold text-white">
+                      Pro · {order.months} month{order.months>1?'s':''}
+                    </div>
+                    <div className="text-[11px] flex items-center gap-2 mt-0.5" style={{color:'#374151'}}>
+                      <span>{timeAgo(order.createdAt)}</span>
+                      <span>·</span>
+                      <span className="font-mono">{order.orderid?.slice(-10)}</span>
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-sm font-bold" style={{color:'#34d399'}}>
+                      {order.amount ? '₹'+(order.amount/100).toLocaleString('en-IN') : 'N/A'}
+                    </div>
+                    <div className="text-[10px] capitalize" style={{color:'#374151'}}>{order.status}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
     </div>
   )
 }
-
-export default Billing

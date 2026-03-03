@@ -48,6 +48,6 @@ router.patch('/projects/:id/settings/env', verifyJWT, contollers.Project.setting
 router.delete('/projects/:id', verifyJWT, contollers.Project.settings.deleteProject)
 router.get('/projects/:id/builds', verifyJWT, contollers.Project.logs.getProjectBuilds)
 router.get('/projects/:id/builds/:buildId', verifyJWT, contollers.Project.logs.getBuildById)
-
+router.get('/projects/:id/billing', verifyJWT, contollers.Project.billing.getProjectBilling)
 
 export default router;

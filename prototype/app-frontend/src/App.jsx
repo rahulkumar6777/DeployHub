@@ -45,7 +45,6 @@ export default function App() {
         <Route path="/"         element={<Home />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/usage"    element={<Usage />} />
-        <Route path="/billing"  element={<Billing />} />
         <Route path="/profile"  element={<Profile />} />
         <Route path="/:type/new" element={<NewDeployment />} />
       </Route>
@@ -59,7 +58,7 @@ export default function App() {
         <Route path="/project/:id/metrics"  element={<div className="text-white p-4">Metrics — coming soon</div>} />
         <Route path="/project/:id/settings" element={ <Settings/> }/>
         <Route path="/project/:id/domains"  element={<div className="text-white p-4">Domains — coming soon</div>} />
-        <Route path="/project/:id/billing"  element={<div className="text-white p-4">Billing — coming soon</div>} />
+        <Route path="/project/:id/billing"  element={<Billing/>} />
       </Route>
 
       {/* ── Verify ── */}

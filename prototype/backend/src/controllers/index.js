@@ -12,6 +12,7 @@ import { getUserRepos } from "./slices/git/getUserRepo.controller.js";
 import { initPayment } from "./slices/Payments/init.controller.js";
 import { paymentVerify } from "./slices/Payments/verify.controller.js";
 import { initVerify, verify } from "./slices/Payments/verifyUser.js";
+import { getProjectBilling } from "./slices/Project/billingController.js";
 import { getBuildById, getProjectBuilds } from "./slices/Project/Buildscontroller.js";
 import { getProjectMeta } from "./slices/Project/getProjectMeta.js";
 import { getProjectOverview } from "./slices/Project/getProjectOverview.js";
@@ -68,6 +69,9 @@ export const contollers = {
         logs: {
             getBuildById,
             getProjectBuilds
+        },
+        billing: {
+            getProjectBilling
         }
     }
 }

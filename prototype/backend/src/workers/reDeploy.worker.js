@@ -68,11 +68,10 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
         }
 
         const isBuildFailed = buildData.status === "failed";
-        const isFirstBuild = !buildData.commitSha;
         const isNewCommit = commitSha && buildData.commitSha !== commitSha;
 
 
-        if (isBuildFailed || isFirstBuild || isNewCommit) {
+        if (isBuildFailed || isNewCommit) {
             try {
                 const buildId = buildData._id.toString();
                 const projectId = projectData._id.toString();
@@ -151,7 +150,7 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
                             VITE_ENV_CONTENT: viteEnvContent
                         };
 
-                        console.log("dynamicBuildArgs" , dynamicBuildArgs)
+                        console.log("dynamicBuildArgs", dynamicBuildArgs)
 
                         const tarStream = await docker.buildImage(tarStreamPack, {
                             t: imageName,

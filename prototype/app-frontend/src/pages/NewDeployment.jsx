@@ -546,11 +546,11 @@ export default function NewDeployment() {
 
             <div className="grid sm:grid-cols-2 gap-3">
               <PlanCard title="Free" price="₹0 / forever"
-                features={['512MB RAM', '0.1 vCPU', '2,000 req/mo', 'nesthost.app subdomain']}
+                features={['512MB RAM', '0.1 vCPU', '2,000 req/day', 'deployhub.online subdomain']}
                 selected={selectedPlan === 'free'} onClick={() => handlePlanChange('free')}
                 highlight={false} verified={planVerified && selectedPlan === 'free'} />
               <PlanCard title="Pro" price="₹799 / mo"
-                features={['2GB RAM', '1 vCPU', '1,00,000 req/mo', 'Custom domain']}
+                features={['2GB RAM', '1 vCPU', '1,00,000 req/day', 'Custom domain']}
                 selected={selectedPlan === 'pro'} onClick={() => handlePlanChange('pro')}
                 highlight={true} verified={planVerified && selectedPlan === 'pro'} />
             </div>
