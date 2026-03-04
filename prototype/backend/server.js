@@ -12,6 +12,9 @@ import './src/workers/deployworker.js'
 import './src/workers/reDeploy.worker.js'
 import './src/workers/Requestcountworker.js'
 import './src/workers/recreate-container.worker.js'
+import './src/workers/deleteProject.worker.js'
+
+
 app.use('/api', Routes)
 
 app.listen(PORT, () => {

@@ -1,6 +1,6 @@
 import { Model } from '../../../models/index.js'
 
-// GET /api/projects/:id/builds
+
 export const getProjectBuilds = async (req, res) => {
   try {
     const project = await Model.Project.findOne({
@@ -28,7 +28,7 @@ export const getProjectBuilds = async (req, res) => {
   }
 }
 
-// GET /api/projects/:id/builds/:buildId
+
 export const getBuildById = async (req, res) => {
   try {
     const project = await Model.Project.findOne({

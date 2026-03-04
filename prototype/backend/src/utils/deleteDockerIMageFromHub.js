@@ -1,18 +1,16 @@
 import axios from "axios";
 
-async function deleteFromDockerHub(repo, tag, token) {
+const deleteFromDockerHub = async (repo, token) => {
   try {
     await axios.delete(
-      `https://hub.docker.com/v2/repositories/${repo}/tags/${tag}/`,
+      `https://hub.docker.com/v2/repositories/${repo}/`,
       {
-        headers: {
-          Authorization: `JWT ${token}`,
-        },
+        headers: { Authorization: `JWT ${token}` },
       }
     );
-    console.log(`Deleted ${repo}:${tag} from Docker Hub`);
+    console.log(`Deleted entire repository: ${repo}`);
   } catch (err) {
-    console.error("Failed to delete from Docker Hub:", err.message);
+    console.error("Failed to delete repository:", err.message);
   }
 }
 

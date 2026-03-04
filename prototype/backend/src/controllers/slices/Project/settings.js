@@ -1,6 +1,8 @@
 import { Model } from '../../../models/index.js'
+import { redisclient } from "../../../configs/redis.js";
+import { deleteproject } from '../../../utils/queues.js';
 
-// ── GET /api/projects/:id/settings ───────────────────────
+
 export const getProjectSettings = async (req, res) => {
     try {
         const project = await Model.Project.findOne({
@@ -32,7 +34,7 @@ export const getProjectSettings = async (req, res) => {
     }
 }
 
-// ── PATCH /api/projects/:id/settings/general ─────────────
+
 export const updateGeneralSettings = async (req, res) => {
     try {
         const { name, repoBranchName, folder } = req.body
@@ -92,16 +94,16 @@ export const updateBuildSettings = async (req, res) => {
     }
 }
 
-// ── PATCH /api/projects/:id/settings/env ─────────────────
+
 export const updateEnvSettings = async (req, res) => {
     try {
-        const { env } = req.body // plain object { KEY: 'value' }
+        const { env } = req.body
 
         if (typeof env !== 'object' || Array.isArray(env)) {
             return res.status(400).json({ success: false, message: 'env must be a key-value object' })
         }
 
-        // Validate keys — no empty keys
+
         for (const key of Object.keys(env)) {
             if (!key.trim()) return res.status(400).json({ success: false, message: 'Empty env key not allowed' })
         }
@@ -121,7 +123,7 @@ export const updateEnvSettings = async (req, res) => {
     }
 }
 
-// ── DELETE /api/projects/:id ─────────────────────────────
+
 export const deleteProject = async (req, res) => {
     try {
         const project = await Model.Project.findOneAndUpdate(
@@ -131,6 +133,10 @@ export const deleteProject = async (req, res) => {
         ).select('_id name')
 
         if (!project) return res.status(404).json({ success: false, message: 'Project not found' })
+
+        await redisclient.del(`subdomain:${project.subdomain}`);
+
+        await deleteproject.add('deployhub-deleteproject', { ProjectId: project._id })
 
         res.status(200).json({ success: true, message: 'Project deleted' })
     } catch (err) {
