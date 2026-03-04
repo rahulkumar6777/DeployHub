@@ -18,6 +18,7 @@ import Settings from "./pages/Settings";
 import Builds from "./pages/Builds";
 import BuildLogs from "./pages/BuildsLogs";
 import Domains from "./pages/Domain";
+import Logs from "./pages/Logs";
 
 function Protected({ children }) {
   const { isAuthenticated, isAuthReady } = useAuth();
@@ -53,7 +54,7 @@ export default function App() {
       {/* ── Project layout (sidebar with project nav) ── */}
       <Route element={<ProtectedWithGate><ProjectLayout /></ProtectedWithGate>}>
         <Route path="/project/:id" element={<Overview />} />
-        <Route path="/project/:id/logs" element={<div className="text-white p-4">Logs — coming soon</div>} />
+        <Route path="/project/:id/logs" element={<Logs />} />
         <Route path="/project/:id/builds" element={<Builds />} />
         <Route path="/project/:id/logs/:buildId" element={<BuildLogs />} />
         <Route path="/project/:id/metrics" element={<div className="text-white p-4">Metrics — coming soon</div>} />

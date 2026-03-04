@@ -1,4 +1,7 @@
 import app from "./index.js";
+import { initSocket } from "./src/socket/socketServer.js";
+import http from "http"
+
 
 const PORT = process.env.PORT;
 
@@ -14,9 +17,12 @@ import './src/workers/Requestcountworker.js'
 import './src/workers/recreate-container.worker.js'
 import './src/workers/deleteProject.worker.js'
 
-
 app.use('/api', Routes)
 
-app.listen(PORT, () => {
+const server = http.createServer(app)
+
+initSocket(server)
+
+server.listen(PORT, () => {
     console.log(`server is running on port ${PORT}`)
 })
