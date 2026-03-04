@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { api } from '../api/apiclient' 
+import { api } from '../api/apiclient'
 
 const BASE_PRICE = 799
 const DISCOUNTS = { 1: 0, 3: 4, 6: 8, 12: 10, 24: 15 }
 const DURATION_LABELS = { 1: '1 Month', 3: '3 Months', 6: '6 Months', 12: '1 Year', 24: '2 Years' }
 
 function calcPrice(months) {
-  const disc     = DISCOUNTS[months]
+  const disc = DISCOUNTS[months]
   const perMonth = Math.round(BASE_PRICE * (1 - disc / 100))
-  const total    = perMonth * months
-  const saved    = BASE_PRICE * months - total
+  const total = perMonth * months
+  const saved = BASE_PRICE * months - total
   return { disc, perMonth, total, saved }
 }
 
@@ -164,25 +164,25 @@ function PlanCard({ title, price, features, selected, onClick, highlight, verifi
 }
 
 export default function NewDeployment() {
-  const { type }       = useParams()
-  const navigate       = useNavigate()
-  const { user }  = useAuth()
-  const razorpayKey    = import.meta.env.VITE_RAZORPAY_KEY_ID
+  const { type } = useParams()
+  const navigate = useNavigate()
+  const { user } = useAuth()
+  const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID
   const razorpayLoaded = useRazorpay()
 
   const isStatic = type === 'static'
   const isGithub = user?.provider === 'github'
 
   const [step, setStep] = useState('repo')
-  const [tab, setTab]   = useState(isGithub ? 'github' : 'public')
+  const [tab, setTab] = useState(isGithub ? 'github' : 'public')
 
   // Repo
-  const [repos, setRepos]               = useState([])
-  const [repoLoading, setRepoLoading]   = useState(false)
-  const [repoError, setRepoError]       = useState(null)
-  const [search, setSearch]             = useState('')
+  const [repos, setRepos] = useState([])
+  const [repoLoading, setRepoLoading] = useState(false)
+  const [repoError, setRepoError] = useState(null)
+  const [search, setSearch] = useState('')
   const [selectedRepo, setSelectedRepo] = useState(null)
-  const [publicUrl, setPublicUrl]       = useState('')
+  const [publicUrl, setPublicUrl] = useState('')
 
   // Form
   const [form, setForm] = useState({
@@ -196,14 +196,14 @@ export default function NewDeployment() {
   // Plan
   const [selectedPlan, setSelectedPlan] = useState('free')
   const [selectedMonths, setSelectedMonths] = useState(1)
-  const [projectId, setProjectId]       = useState(null)    // from init/verify response
+  const [projectId, setProjectId] = useState(null)    // from init/verify response
   const [planVerified, setPlanVerified] = useState(false)
-  const [planLoading, setPlanLoading]   = useState(false)
-  const [planError, setPlanError]       = useState(null)
+  const [planLoading, setPlanLoading] = useState(false)
+  const [planError, setPlanError] = useState(null)
 
   // Deploy
-  const [deploying, setDeploying]       = useState(false)
-  const [deployError, setDeployError]   = useState(null)
+  const [deploying, setDeploying] = useState(false)
+  const [deployError, setDeployError] = useState(null)
 
   useEffect(() => {
     if (!isGithub) return
@@ -244,14 +244,14 @@ export default function NewDeployment() {
   function validateForm() {
     const e = {}
     if (!selectedRepo?.html_url) e.codeLink = 'Please select a repository'
-    if (!form.name.trim())        e.name      = 'Required'
-    if (!form.branchname.trim())  e.branchname = 'Required'
+    if (!form.name.trim()) e.name = 'Required'
+    if (!form.branchname.trim()) e.branchname = 'Required'
     if (isStatic) {
       if (!form.buildCommand.trim()) e.buildCommand = 'Required'
-      if (!form.publishDir.trim())   e.publishDir   = 'Required'
+      if (!form.publishDir.trim()) e.publishDir = 'Required'
     } else {
       if (!form.startCommand.trim()) e.startCommand = 'Required'
-      if (!form.port.trim())         e.port = 'Required'
+      if (!form.port.trim()) e.port = 'Required'
       else if (isNaN(Number(form.port)) || Number(form.port) < 1 || Number(form.port) > 65535)
         e.port = 'Enter a valid port (1–65535)'
     }
@@ -307,8 +307,8 @@ export default function NewDeployment() {
           try {
             const { data } = await api.post('/subscription/verify', {
               razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id:   response.razorpay_order_id,
-              razorpay_signature:  response.razorpay_signature,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
             })
             if (data.success) {
               setProjectId(data.project?._id || data.projectId)
@@ -346,11 +346,11 @@ export default function NewDeployment() {
     try {
       const payload = {
         projectId,
-        name:        form.name.trim(),
-        codeLink:    selectedRepo.html_url,
+        name: form.name.trim(),
+        codeLink: selectedRepo.html_url,
         projectType: type,
-        branchname:  form.branchname.trim(),
-        isFolder:    form.isFolder,
+        branchname: form.branchname.trim(),
+        isFolder: form.isFolder,
         ...(form.isFolder && { folderName: form.folderName.trim() }),
         ...(parseEnv(form.env) && { env: parseEnv(form.env) }),
         ...(isStatic
@@ -359,7 +359,10 @@ export default function NewDeployment() {
         ),
       }
       await api.post('/deployment', payload)
-      navigate(`/project/:${projectId}/logs`)
+      setTimeout(() => {
+        navigate(`/project/${projectId}/logs`);
+      }, 2000);
+
     } catch (err) {
       setDeployError(err?.response?.data?.message || 'Deployment failed.')
     } finally {
