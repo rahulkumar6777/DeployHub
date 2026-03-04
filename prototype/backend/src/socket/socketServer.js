@@ -5,7 +5,7 @@ import RedisConfig from "../utils/pubSubRedis.js"
 
 const redis = new RedisConfig()
 
-const origin = process.env.NODE_ENV === 'production' ? 'http://localhost:5000' : "https://api.deployhub.cloud"
+const origin = process.env.NODE_ENV === 'production' ? 'https://deployhub.cloud' : 'http://localhost:5000';
 
 export const initSocket = (server) => {
     const io = new Server(server, {
