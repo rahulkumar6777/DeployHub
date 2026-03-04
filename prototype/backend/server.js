@@ -17,6 +17,11 @@ import './src/workers/Requestcountworker.js'
 import './src/workers/recreate-container.worker.js'
 import './src/workers/deleteProject.worker.js'
 
+
+import { ensureBucket } from './src/utils/minio.js'
+await ensureBucket()
+
+
 app.use('/api', Routes)
 
 const server = http.createServer(app)
