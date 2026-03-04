@@ -1,7 +1,7 @@
 import { Worker } from "bullmq";
 import docker from "../utils/docker.js";
 import { Model } from "../models/index.js";
-import deleteFromDockerHub from "../utils/deleteDockerIMageFromHub.js";
+import { deleteRepository } from "../utils/deleteDockerIMageFromHub.js";
 import { connection } from "../utils/connection.js";
 import { redisclient } from "../configs/redis.js";
 
@@ -56,7 +56,7 @@ const worker = new Worker("deployhub-deleteproject", async (job) => {
             }
 
             // after delete locally delete from dockerhub
-            await deleteFromDockerHub(repo, DockerUsername, DockerPassword);
+            await deleteRepository(repo, DockerUsername, DockerPassword);
 
 
         } catch (err) {
