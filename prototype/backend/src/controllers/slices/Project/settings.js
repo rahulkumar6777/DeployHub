@@ -134,8 +134,6 @@ export const deleteProject = async (req, res) => {
 
         if (!project) return res.status(404).json({ success: false, message: 'Project not found' })
 
-        await redisclient.del(`subdomain:${project.subdomain}`);
-
         await deleteproject.add('deployhub-deleteproject', { ProjectId: project._id })
 
         res.status(200).json({ success: true, message: 'Project deleted' })
