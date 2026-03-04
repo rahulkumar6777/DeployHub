@@ -19,12 +19,12 @@ export const initSocket = (server) => {
         let joinedProject = null
         let joinedBuildRoom = null
 
-
+        
         socket.on("joinLogs", async ({ projectId }) => {
             const project = await Model.Project.findById(projectId).select("_id").lean()
             if (!project) return socket.disconnect()
 
-
+            
             if (joinedProject && joinedProject !== projectId) {
                 socket.leave(`live:${joinedProject}`)
             }
@@ -32,7 +32,7 @@ export const initSocket = (server) => {
             joinedProject = projectId
             socket.join(`live:${projectId}`)
 
-
+            
             const existing = activeStreams.get(projectId)
             if (existing) {
                 existing.destroy()
@@ -42,7 +42,7 @@ export const initSocket = (server) => {
             await logsProduce(projectId)
         })
 
-
+        
         socket.on("joinBuildLogs", async ({ projectId }) => {
             const project = await Model.Project.findById(projectId).select("_id").lean()
             if (!project) return socket.disconnect()
@@ -52,7 +52,7 @@ export const initSocket = (server) => {
             socket.join(joinedBuildRoom)
         })
 
-
+        
         socket.on("disconnect", () => {
             if (joinedProject) {
                 const room = io.sockets.adapter.rooms.get(`live:${joinedProject}`)
@@ -67,13 +67,13 @@ export const initSocket = (server) => {
         })
     })
 
-
+    
     redisRuntimeLogs.consume("logs", async (message) => {
         const data = JSON.parse(message)
         io.to(`live:${data.projectId}`).emit("logs", data.log)
     })
 
-
+  
     redisBuildLogs.consume("build-logs", async (message) => {
         const data = JSON.parse(message)
         const room = `build:${data.projectId}`

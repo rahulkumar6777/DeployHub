@@ -116,11 +116,26 @@ export default function Logs() {
             appendLine(log)
         })
 
-        // ── Build complete ──────────────────────────────────
+        // ── Build complete ──
         socket.on('buildComplete', ({ status, logUrl }) => {
             setBuildDone({ status, logUrl })
             appendLine(`[deployhub] Build ${status}`)
-            // setProjectStatus(status === 'success' ? STATUS.live : STATUS.failed)
+
+            if (status === 'success') {
+                socket.disconnect()
+
+                setTimeout(() => {
+                    api.get(`/projects/${projectId}/logs-status`)
+                        .then(r => {
+                            setProjectStatus(r.data.projectStatus)
+                            setLastBuild(r.data.lastBuild)
+                        })
+                        .catch(console.error)
+                }, 3000)
+            } else {
+                setMode('static')
+                socket.disconnect()
+            }
         })
 
         // ── Runtime log line ────────────────────────────────
