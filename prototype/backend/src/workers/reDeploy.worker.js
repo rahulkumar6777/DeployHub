@@ -400,6 +400,8 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
                 }
             });
 
+            console.log('successfully make new container for static')
+
             await container.start();
 
             // deploymentData.status = "live";
@@ -410,7 +412,6 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
 
         // ---------------- NODE ----------------
         if (projectData.projectType === "node") {
-            const containerPort = `${projectData.port}/tcp`;
 
             const container = await docker.createContainer({
                 Image: imageName,
@@ -423,6 +424,7 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
 
             await container.start();
 
+            console.log('successfully make new container for node')
             // deploymentData.status = "live";
             // deploymentData.containerId = container.id;
             // deploymentData.deployedAt = new Date();
