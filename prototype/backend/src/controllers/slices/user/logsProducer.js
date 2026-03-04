@@ -23,7 +23,6 @@ export const logsProduce = async (projectId) => {
   )
 
   if (!existingContainer) return
-  if (existingContainer.State !== "running") return
 
   const container = docker.getContainer(existingContainer.Id)
 
