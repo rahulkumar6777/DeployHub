@@ -55,7 +55,7 @@ const worker = new Worker("deployhub-deleteproject", async (job) => {
             }
 
             // after delete locally delete from dockerhub
-            await deleteFromDockerHub(repo, DockerPassword);
+            await deleteFromDockerHub(repo, DockerUsername , DockerPassword);
 
 
         } catch (err) {
@@ -68,6 +68,7 @@ const worker = new Worker("deployhub-deleteproject", async (job) => {
         // delete allocation data
         await Model.Binding.findOneAndDelete({ project: ProjectId });
 
+        await Model.Project.findByIdAndDelete(ProjectId)
 
         console.log("succesfully delete all data of prject", projectData._id)
     } catch (err) {
