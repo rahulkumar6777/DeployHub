@@ -29,7 +29,14 @@ const createDeploymentValidate = [
     body("buildCommand")
         .if(body("projectType").equals("static"))
         .notEmpty()
-        .withMessage("Build command is required for static project"),
+        .withMessage("Build command is required for static project")
+        .custom((value) => {
+            const invalid = /(dev|serve|start|preview)/i;
+            if (invalid.test(value)) {
+                throw new Error("Invalid build command. Use a terminating build script like 'npm run build' or 'npm run generate'.");
+            }
+            return true;
+        }),
     body("publishDir")
         .if(body("projectType").equals("static"))
         .notEmpty()

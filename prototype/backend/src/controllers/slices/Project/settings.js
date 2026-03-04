@@ -68,13 +68,29 @@ export const updateGeneralSettings = async (req, res) => {
     }
 }
 
-// ── PATCH /api/projects/:id/settings/build ───────────────
+
+function sanitizeStaticBuildCommand(userCmd) {
+    const invalid = /(dev|serve|start|preview)/i;
+    if (!userCmd || invalid.test(userCmd)) {
+        return "npm run build";
+    }
+    const valid = /(build|generate|export)/i;
+    if (!valid.test(userCmd)) {
+        return "npm run build";
+    }
+    return userCmd;
+}
+
+
+
 export const updateBuildSettings = async (req, res) => {
     try {
         const { buildCommand, publishDir, startCommand, port } = req.body
 
         const update = {}
-        if (buildCommand !== undefined) update.buildCommand = buildCommand
+        if (buildCommand !== undefined) {
+            update.buildCommand = sanitizeStaticBuildCommand(buildCommand);
+        }
         if (publishDir !== undefined) update.publishDir = publishDir
         if (startCommand !== undefined) update.startCommand = startCommand
         if (port !== undefined) update.port = port ? parseInt(port) : undefined
