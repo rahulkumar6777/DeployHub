@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { io } from 'socket.io-client'
-import { useAuth } from '../../context/AuthContext'
+import { api } from '../api/apiclient'
 
-const SOCKET_URL = 'http://localhost:5000'
+
 
 // Project status types
+const nodeenv = "production"
+const SOCKET_URL = nodeenv === 'production' ? 'https://api.deployhub.cloud' : 'http://localhost:5000';
+
 const STATUS = {
     building: 'building',
     live: 'live',
@@ -45,7 +48,6 @@ function StatusBadge({ status }) {
 
 export default function Logs() {
     const { id: projectId } = useParams()
-    const { api } = useAuth()
     const socketRef = useRef(null)
     const bottomRef = useRef(null)
 
