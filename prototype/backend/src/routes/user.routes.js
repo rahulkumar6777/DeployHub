@@ -51,5 +51,6 @@ router.get('/projects/:id/builds/:buildId', verifyJWT, contollers.Project.logs.g
 router.get('/projects/:id/billing', verifyJWT, contollers.Project.billing.getProjectBilling)
 router.get('/projects/:id/domains' , verifyJWT , contollers.Project.domain.getProjectDomains)
 router.patch('/projects/:id/domains/subdomain' , verifyJWT , contollers.Project.domain.updateSubdomain)
+router.get('/projects/:id/logs-status', verifyJWT, contollers.Project.logs.getLogsStatus)
 
 export default router;

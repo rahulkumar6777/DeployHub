@@ -1,71 +1,67 @@
 import { uploadLog, buildLogUrl } from './minio.js'
+import { Model } from '../models/index.js'
+import RedisConfig from './pubSubRedis.js'
+
+const redis = new RedisConfig()
 
 export class BuildLogger {
-
     constructor(buildId, projectId) {
-
         this.buildId = buildId
-
         this.projectId = projectId
-
         this.lines = []
-
         this.startedAt = null
-
     }
 
     async start() {
-
         this.startedAt = new Date()
-
-        this.write(`[deployhub] Build started at ${this.startedAt.toISOString()}\n`)
-
+        this.write(`[deployhub] Build started at ${this.startedAt.toISOString()}`)
+        await Model.Build.findByIdAndUpdate(this.buildId, {
+            $set: { status: 'pending', startedAt: this.startedAt }
+        })
     }
 
-    write(chunk) {
-
+    async write(chunk) {
         if (!chunk) return
-
         const clean = chunk.toString()
-
             .replace(/\r/g, '')
-
             .replace(/^[\x00-\x08][\x00-\x03][\x00]{6}/gm, '')
-
             .trimEnd()
-
         if (!clean) return
 
         const ts = new Date().toISOString().slice(11, 23)
+        const line = `[${ts}] ${clean}`
+        this.lines.push(line)
 
-        this.lines.push(`[${ts}] ${clean}`)
 
+        await redis.produce('build-logs', JSON.stringify({
+            projectId: this.projectId,
+            buildId: this.buildId,
+            log: line,
+        }))
     }
 
     async finish(status = 'success') {
-
         const finishedAt = new Date()
-
-        this.write(`[deployhub] Build ${status} at ${finishedAt.toISOString()}`)
+        await this.write(`[deployhub] Build ${status} at ${finishedAt.toISOString()}`)
 
         const objectName = `builds/${this.projectId}/${this.buildId}.log`
-
         let logUrl = null
 
         try {
-
             await uploadLog(objectName, this.lines.join('\n'))
-
             logUrl = buildLogUrl(objectName)
-
         } catch (err) {
-
             console.error('[buildLogger] Minio upload failed:', err.message)
-
         }
 
+        await redis.produce('build-logs', JSON.stringify({
+            projectId: this.projectId,
+            buildId: this.buildId,
+            type: 'complete',
+            status,
+            logUrl,
+        }))
+
         return logUrl
-
     }
-
 }

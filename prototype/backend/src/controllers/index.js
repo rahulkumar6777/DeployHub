@@ -15,6 +15,7 @@ import { initVerify, verify } from "./slices/Payments/verifyUser.js";
 import { getProjectBilling } from "./slices/Project/billingController.js";
 import { getBuildById, getProjectBuilds } from "./slices/Project/Buildscontroller.js";
 import { getProjectDomains, updateSubdomain } from "./slices/Project/domain.controller.js";
+import { getLogsStatus } from "./slices/Project/getLogsStatus.js";
 import { getProjectMeta } from "./slices/Project/getProjectMeta.js";
 import { getProjectOverview } from "./slices/Project/getProjectOverview.js";
 import { deleteProject, getProjectSettings, updateBuildSettings, updateEnvSettings, updateGeneralSettings } from "./slices/Project/settings.js";
@@ -69,7 +70,8 @@ export const contollers = {
         },
         logs: {
             getBuildById,
-            getProjectBuilds
+            getProjectBuilds,
+            getLogsStatus
         },
         billing: {
             getProjectBilling
