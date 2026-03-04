@@ -272,6 +272,7 @@ const buildWorker = new Worker(
           finishedAt: new Date(),
           ...(logUrl && { logUrl }),
         })
+        
       } catch (logErr) {
         console.error('Failed to save error logs:', logErr.message)
       }
