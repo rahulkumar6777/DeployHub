@@ -3,6 +3,7 @@ import docker from "../utils/docker.js";
 import { Model } from "../models/index.js";
 import deleteFromDockerHub from "../utils/deleteDockerIMageFromHub.js";
 import { connection } from "../utils/connection.js";
+import { redisclient } from "../configs/redis.js";
 
 const DockerUsername = process.env.DOCKER_USERNAME;
 const DockerPassword = process.env.DOCKER_PASSWORD;
@@ -13,7 +14,7 @@ const worker = new Worker("deployhub-deleteproject", async (job) => {
         const { ProjectId } = job.data
 
         // here first i get projectData
-        const projectData = await Model.Project.findById(ProjectId);
+        const projectData = await Model.Project.findById(ProjectId).lean()
 
         // repo
         const repo = `${DockerUsername}/${ProjectId.toLowerCase()}`;
@@ -55,7 +56,7 @@ const worker = new Worker("deployhub-deleteproject", async (job) => {
             }
 
             // after delete locally delete from dockerhub
-            await deleteFromDockerHub(repo, DockerUsername , DockerPassword);
+            await deleteFromDockerHub(repo, DockerUsername, DockerPassword);
 
 
         } catch (err) {
@@ -70,6 +71,8 @@ const worker = new Worker("deployhub-deleteproject", async (job) => {
 
         await Model.Project.findByIdAndDelete(ProjectId)
 
+        // delete cache if exist
+        redisclient.del(`subdomain:${projectData.subdomain}`)
         console.log("succesfully delete all data of prject", projectData._id)
     } catch (err) {
         throw err
