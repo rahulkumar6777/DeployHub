@@ -18,6 +18,7 @@ import { getProjectDomains, updateSubdomain } from "./slices/Project/domain.cont
 import { getLogsStatus } from "./slices/Project/getLogsStatus.js";
 import { getProjectMeta } from "./slices/Project/getProjectMeta.js";
 import { getProjectOverview } from "./slices/Project/getProjectOverview.js";
+import { getProjectMetrics } from "./slices/Project/Metricscontroller.js";
 import { deleteProject, getProjectSettings, updateBuildSettings, updateEnvSettings, updateGeneralSettings } from "./slices/Project/settings.js";
 import { getDashboardStats } from "./slices/user/dashboard.js";
 import { fullName } from "./slices/user/fullName.controller.js";
@@ -79,6 +80,7 @@ export const contollers = {
         domain: {
             getProjectDomains,
             updateSubdomain
-        }
+        },
+        getProjectMetrics
     }
 }

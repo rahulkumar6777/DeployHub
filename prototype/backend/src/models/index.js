@@ -1,6 +1,7 @@
 import { Binding } from "./slices/binding.model.js";
 import { Build } from "./slices/build.model.js";
 import { CompletedOrder } from "./slices/completedOrder.model.js";
+import { DailyMetric } from "./slices/dailyMetricSchema.js";
 import deploymentModel from "./slices/deployment.model.js";
 import { OtpValidate } from "./slices/otpValidator.model.js";
 import { PendingOrder } from "./slices/PendingOrder.js";
@@ -21,5 +22,6 @@ export const Model = {
     Subscription,
     VerifyuserPayment,
     PendingOrder,
-    CompletedOrder
+    CompletedOrder,
+    DailyMetric
 }

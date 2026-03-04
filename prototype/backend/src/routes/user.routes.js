@@ -49,8 +49,9 @@ router.delete('/projects/:id', verifyJWT, contollers.Project.settings.deleteProj
 router.get('/projects/:id/builds', verifyJWT, contollers.Project.logs.getProjectBuilds)
 router.get('/projects/:id/builds/:buildId', verifyJWT, contollers.Project.logs.getBuildById)
 router.get('/projects/:id/billing', verifyJWT, contollers.Project.billing.getProjectBilling)
-router.get('/projects/:id/domains' , verifyJWT , contollers.Project.domain.getProjectDomains)
-router.patch('/projects/:id/domains/subdomain' , verifyJWT , contollers.Project.domain.updateSubdomain)
+router.get('/projects/:id/domains', verifyJWT, contollers.Project.domain.getProjectDomains)
+router.patch('/projects/:id/domains/subdomain', verifyJWT, contollers.Project.domain.updateSubdomain)
 router.get('/projects/:id/logs-status', verifyJWT, contollers.Project.logs.getLogsStatus)
+router.get('/projects/:id/metrics', verifyJWT, contollers.Project.getProjectMetrics)
 
 export default router;
