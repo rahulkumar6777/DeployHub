@@ -86,4 +86,9 @@ jobs:
               -e KEY_SECRET=${{ secrets.KEY_SECRET }} \
               -e DEVLOAD_PROJECT_ID=${{ secrets.DEVLOAD_PROJECT_ID }} \
               -e DEVLOAD_API_KEY=${{ secrets.DEVLOAD_API_KEY }} \
+              -e MINIO_BUCKET=${{ secrets.MINIO_BUCKET }} \
+              -e MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY }} \
+              -e MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY }} \
+              -e MINIO_INTERNAL_HOST=${{ secrets.MINIO_INTERNAL_HOST }} \
+              -e MINIO_PUBLIC_HOST=${{ secrets.MINIO_PUBLIC_HOST }} \
               ${{ secrets.DOCKER_USERNAME }}/backenddeployhub:latest

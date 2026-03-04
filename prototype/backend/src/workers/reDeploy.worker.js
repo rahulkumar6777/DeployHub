@@ -287,7 +287,6 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
 
                 }
                 if (projectData.projectType === 'node') {
-                    await copyNginxfile(nginxpath);
                     await copyDockerFile(await dockerfilechoose("nodejs"));
                     await buildandpushimage(projectData, buildFilePath, 'node')
                 }

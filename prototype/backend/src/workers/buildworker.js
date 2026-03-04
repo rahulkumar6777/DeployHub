@@ -8,6 +8,7 @@ import { execSync } from "child_process";
 import { connection } from "../utils/connection.js";
 import tar from "tar-fs";
 import { stringify } from "querystring";
+import { BuildLogger } from "../utils/buildLogger.js";
 
 const BASE_DIR = path.resolve();
 
@@ -22,6 +23,8 @@ const buildWorker = new Worker(
       // job data
       const { projectId, buildId } = job.data;
 
+      const logger = new BuildLogger(buildId, projectId)
+      await logger.start()
       // docker imagename
       const imageName = `${dockerusername}/${projectId.toString().toLowerCase()}:${buildId.toString().toLowerCase()}`;
 
@@ -93,6 +96,8 @@ const buildWorker = new Worker(
               }
             }
 
+            logger.write(`[deployhub] Building static image...\n`)
+
             const dynamicBuildArgs = {
               BUILD_CMD: projectdata.buildCommand || "",
               BUILD_DIR: projectdata.publishDir,
@@ -111,9 +116,12 @@ const buildWorker = new Worker(
                 tarStream,
                 (err, res) => (err ? reject(err) : resolve(res)),
                 (event) => {
-                  if (event.stream) process.stdout.write(event.stream);
+                  if (event.stream) {
+                    process.stdout.write(event.stream)
+                    logger.write(event.stream)
+                  }
                   if (event.error) {
-                    console.error("Docker build error:", event.error);
+                    logger.write(`[ERROR] ${event.error}`)
                     reject(new Error(event.error));
                   }
                 },
@@ -139,9 +147,12 @@ const buildWorker = new Worker(
                 tarStream,
                 (err, res) => (err ? reject(err) : resolve(res)),
                 (event) => {
-                  if (event.stream) process.stdout.write(event.stream);
+                  if (event.stream) {
+                    process.stdout.write(event.stream)
+                    logger.write(`[deployhub] Building node image...\n`)
+                  }
                   if (event.error) {
-                    console.error("Docker build error:", event.error);
+                    logger.write(`[ERROR] ${event.error}`)
                     reject(new Error(event.error));
                   }
                 },
@@ -190,6 +201,8 @@ const buildWorker = new Worker(
       //clone repo
       let repoUrlWithAuth;
 
+      logger.write(`Cloning ${owner}/${repo} branch: ${branchname}\n`)
+
       if (usergithubAccessToken) {
         repoUrlWithAuth = `https://${usergithubAccessToken}@github.com/${owner}/${repo}.git`;
       } else {
@@ -221,22 +234,27 @@ const buildWorker = new Worker(
         });
       }
 
+      logger.write(`Repo cloned successfully\n`)
+
       if (projectData.projectType === "static") {
         await copyNginxfile(nginxpath);
         await copyDockerFile(await dockerfilechoose("static"));
         await buildandpushimage(projectData, buildFilePath, "static");
       }
       if (projectData.projectType === "node") {
-        await copyNginxfile(nginxpath);
         await copyDockerFile(await dockerfilechoose("nodejs"));
         await buildandpushimage(projectData, buildFilePath, "node");
       }
 
+      // Upload logs to Minio + get logUrl
+      const logUrl = await logger.finish('success')
+      console.log(logUrl)
 
       await Model.Build.findByIdAndUpdate(buildData._id, {
         status: "success",
         finishedAt: new Date(),
-        dockerImage: imageName
+        dockerImage: imageName,
+        logUrl: logUrl
       })
 
     } catch (error) {
