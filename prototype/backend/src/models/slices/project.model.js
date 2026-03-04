@@ -3,7 +3,8 @@ import mongoose from "mongoose";
 const projectSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: true
+        required: true,
+        default: 'Unnamed Project'
     },
     owner: {
         type: mongoose.Schema.Types.ObjectId,
