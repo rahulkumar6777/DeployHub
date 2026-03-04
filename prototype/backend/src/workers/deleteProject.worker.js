@@ -72,7 +72,7 @@ const worker = new Worker("deployhub-deleteproject", async (job) => {
         await Model.Project.findByIdAndDelete(ProjectId)
 
         // delete cache if exist
-        redisclient.del(`subdomain:${projectData.subdomain}`)
+        await redisclient.del(`subdomain:${projectData.subdomain}`)
         console.log("succesfully delete all data of prject", projectData._id)
     } catch (err) {
         throw err
