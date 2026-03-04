@@ -15,16 +15,19 @@ const BASE_DIR = path.resolve();
 const buildWorker = new Worker(
   "buildqueue",
   async (job) => {
+
+    // job data
+    const { projectId, buildId } = job.data;
+
+    const logger = new BuildLogger(buildId, projectId)
+    await logger.start()
+
     try {
       // docker credentials
       const dockerusername = process.env.DOCKER_USERNAME;
       const dockerpassword = process.env.DOCKER_PASSWORD;
 
-      // job data
-      const { projectId, buildId } = job.data;
 
-      const logger = new BuildLogger(buildId, projectId)
-      await logger.start()
       // docker imagename
       const imageName = `${dockerusername}/${projectId.toString().toLowerCase()}:${buildId.toString().toLowerCase()}`;
 
@@ -149,7 +152,7 @@ const buildWorker = new Worker(
                 (event) => {
                   if (event.stream) {
                     process.stdout.write(event.stream)
-                   logger.write(event.stream)
+                    logger.write(event.stream)
                   }
                   if (event.error) {
                     logger.write(`[ERROR] ${event.error}`)
@@ -258,7 +261,20 @@ const buildWorker = new Worker(
       })
 
     } catch (error) {
+
       console.log("error in build worker", error);
+
+      try {
+        logger.write(`[ERROR] Build failed: ${error.message}`)
+        const logUrl = await logger.finish('failed')
+        await Model.Build.findByIdAndUpdate(job.data.buildId, {
+          status: "failed",
+          finishedAt: new Date(),
+          ...(logUrl && { logUrl }),
+        })
+      } catch (logErr) {
+        console.error('Failed to save error logs:', logErr.message)
+      }
       throw error;
     } finally {
       const buildFilePath = path.join("builds", job.data.buildId.toString());
