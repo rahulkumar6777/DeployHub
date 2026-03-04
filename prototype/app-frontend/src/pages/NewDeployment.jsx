@@ -359,7 +359,7 @@ export default function NewDeployment() {
         ),
       }
       await api.post('/deployment', payload)
-      navigate('/projects')
+      navigate(`/project/:${projectId}/logs`)
     } catch (err) {
       setDeployError(err?.response?.data?.message || 'Deployment failed.')
     } finally {
