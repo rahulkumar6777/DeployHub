@@ -120,7 +120,7 @@ export default function Logs() {
         socket.on('buildComplete', ({ status, logUrl }) => {
             setBuildDone({ status, logUrl })
             appendLine(`[deployhub] Build ${status}`)
-            setProjectStatus(status === 'success' ? STATUS.live : STATUS.failed)
+            // setProjectStatus(status === 'success' ? STATUS.live : STATUS.failed)
         })
 
         // ── Runtime log line ────────────────────────────────

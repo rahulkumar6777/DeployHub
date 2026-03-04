@@ -149,7 +149,7 @@ const buildWorker = new Worker(
                 (event) => {
                   if (event.stream) {
                     process.stdout.write(event.stream)
-                   logger.write(event.stream) 
+                   logger.write(event.stream)
                   }
                   if (event.error) {
                     logger.write(`[ERROR] ${event.error}`)

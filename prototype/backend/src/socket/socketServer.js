@@ -6,12 +6,12 @@ import RedisConfig from "../utils/pubSubRedis.js"
 const redisBuildLogs = new RedisConfig()
 const redisRuntimeLogs = new RedisConfig()
 
-const origin = process.env.NODE_ENV === 'production' ? 'https://deployhub.cloud' : 'http://localhost:5000';
+const origin = process.env.NODE_ENV === 'production' ? 'https://deployhub.cloud' : 'http://localhost:5000'
 
 export const initSocket = (server) => {
 
     const io = new Server(server, {
-        cors: { origin: origin }
+        cors: { origin }
     })
 
     io.on("connection", (socket) => {
@@ -24,17 +24,27 @@ export const initSocket = (server) => {
             const project = await Model.Project.findById(projectId).select("_id").lean()
             if (!project) return socket.disconnect()
 
+
             if (joinedProject && joinedProject !== projectId) {
-                socket.leave(joinedProject)
+                socket.leave(`live:${joinedProject}`)
             }
+
             joinedProject = projectId
             socket.join(`live:${projectId}`)
+
+
+            const existing = activeStreams.get(projectId)
+            if (existing) {
+                existing.destroy()
+                activeStreams.delete(projectId)
+            }
+
             await logsProduce(projectId)
         })
 
 
         socket.on("joinBuildLogs", async ({ projectId }) => {
-            const project = await Model.Project.findById(projectId).select("_id status").lean()
+            const project = await Model.Project.findById(projectId).select("_id").lean()
             if (!project) return socket.disconnect()
 
             if (joinedBuildRoom) socket.leave(joinedBuildRoom)
@@ -42,7 +52,18 @@ export const initSocket = (server) => {
             socket.join(joinedBuildRoom)
         })
 
+
         socket.on("disconnect", () => {
+            if (joinedProject) {
+                const room = io.sockets.adapter.rooms.get(`live:${joinedProject}`)
+                if (!room || room.size === 0) {
+                    const stream = activeStreams.get(joinedProject)
+                    if (stream) {
+                        stream.destroy()
+                        activeStreams.delete(joinedProject)
+                    }
+                }
+            }
         })
     })
 
@@ -66,5 +87,4 @@ export const initSocket = (server) => {
             io.to(room).emit("buildLog", data.log)
         }
     })
-
 }
