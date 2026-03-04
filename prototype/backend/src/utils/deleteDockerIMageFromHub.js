@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getDockerHubToken } from './getDockerHubToken';
+import { getDockerHubToken } from './getDockerHubToken.js';
 
 
 let dockerHubToken = null;
