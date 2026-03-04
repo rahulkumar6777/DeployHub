@@ -205,6 +205,8 @@ export default function NewDeployment() {
   const [deploying, setDeploying] = useState(false)
   const [deployError, setDeployError] = useState(null)
 
+  const [deployed, setDeployed] = useState(false)
+
   useEffect(() => {
     if (!isGithub) return
     setRepoLoading(true)
@@ -358,6 +360,7 @@ export default function NewDeployment() {
           : { startCommand: form.startCommand.trim(), port: Number(form.port) }
         ),
       }
+      setDeployed(true)
       await api.post('/deployment', payload)
       setTimeout(() => {
         navigate(`/project/${projectId}/logs`);
@@ -392,6 +395,57 @@ export default function NewDeployment() {
           {step === 'repo' ? 'Select Repository' : 'Configure & Deploy'}
         </h1>
       </div>
+
+      {/* ── Success screen ── */}
+      {deployed && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: 'rgba(5,8,16,0.95)', backdropFilter: 'blur(12px)' }}>
+          <div className="text-center space-y-5 px-6">
+
+            {/* Animated checkmark */}
+            <div className="relative w-20 h-20 mx-auto">
+              <div className="absolute inset-0 rounded-full animate-ping"
+                style={{ background: 'rgba(0,229,255,0.1)' }} />
+              <div className="relative w-20 h-20 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(0,229,255,0.08)', border: '1px solid rgba(0,229,255,0.25)' }}>
+                <svg className="w-9 h-9" style={{ color: '#00e5ff' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            </div>
+
+            <div>
+              <h2 className="font-syne font-black text-2xl text-white mb-1">Build Started!</h2>
+              <p className="text-sm" style={{ color: '#4b5563' }}>
+                Your project is queued for deployment.
+              </p>
+            </div>
+
+            {/* Progress bar */}
+            <div className="w-48 mx-auto h-1 rounded-full overflow-hidden"
+              style={{ background: 'rgba(255,255,255,0.06)' }}>
+              <div className="h-full rounded-full animate-[grow_3s_linear_forwards]"
+                style={{
+                  background: 'linear-gradient(90deg,#00e5ff,#00b8cc)', width: '0%',
+                  animation: 'grow 3s linear forwards'
+                }} />
+            </div>
+
+            <p className="text-xs" style={{ color: '#1f2937' }}>
+              Redirecting to logs...
+            </p>
+
+            {/* Manual nav */}
+            <button onClick={() => navigate(`/project/${projectId}/logs`)}
+              className="text-xs font-bold transition-colors"
+              style={{ color: '#374151' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#00e5ff'}
+              onMouseLeave={e => e.currentTarget.style.color = '#374151'}>
+              Go now →
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── STEP 1: Repo ── */}
       {step === 'repo' && (
