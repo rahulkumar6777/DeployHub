@@ -2,7 +2,7 @@ import cron from 'node-cron'
 import { Model } from '../models/index.js'
 
 
-cron.schedule('*/1 * * * *', async () => {
+cron.schedule('0 0 * * *', async () => {
   try {
     const today = new Date().toISOString().slice(0, 10)
 
@@ -32,6 +32,8 @@ cron.schedule('*/1 * * * *', async () => {
   } catch (err) {
     console.error('[metrics cron] Failed:', err.message)
   }
+}, {
+  timezone: "Asia/Kolkata"
 })
 
 console.log('[metrics cron] Scheduled daily at midnight')
