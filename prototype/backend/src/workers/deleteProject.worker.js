@@ -68,8 +68,10 @@ const worker = new Worker("deployhub-deleteproject", async (job) => {
 
         // delete allocation data
         await Model.Binding.findOneAndDelete({ project: ProjectId });
-
         await Model.Project.findByIdAndDelete(ProjectId)
+        await Model.deploymentModel.deleteMany({project: ProjectId})
+        await Model.DailyMetric.deleteMany({projectId: ProjectId})
+        await Model.SslCertificate.deleteOne({projectId: ProjectId})
 
         // delete cache if exist
         await redisclient.del(`subdomain:${projectData.subdomain}`)

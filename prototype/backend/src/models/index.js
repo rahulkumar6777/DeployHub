@@ -6,6 +6,7 @@ import deploymentModel from "./slices/deployment.model.js";
 import { OtpValidate } from "./slices/otpValidator.model.js";
 import { PendingOrder } from "./slices/PendingOrder.js";
 import { Project } from "./slices/project.model.js";
+import { SslCertificate } from "./slices/sslCertificate.js";
 import { Subscription } from "./slices/subscription.model.js";
 import { TempUser } from "./slices/tempUser.model.js";
 import { User } from "./slices/user.model.js";
@@ -23,5 +24,6 @@ export const Model = {
     VerifyuserPayment,
     PendingOrder,
     CompletedOrder,
-    DailyMetric
+    DailyMetric,
+    SslCertificate
 }
