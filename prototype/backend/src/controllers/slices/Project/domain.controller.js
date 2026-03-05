@@ -7,7 +7,7 @@ import {
     writeNginxConfig,
     removeNginxConfig,
     reloadNginx,
-} from '../utils/sslUtils.js'
+} from '../../../utils/sslUtils.js'
 
 
 export const getProjectDomains = async (req, res) => {
