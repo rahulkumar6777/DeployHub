@@ -43,57 +43,79 @@ export const getProjectDomains = async (req, res) => {
 
 export const updateSubdomain = async (req, res) => {
     try {
-        const { subdomain } = req.body
+        const { subdomain } = req.body;
+
         if (!subdomain || !/^[a-z0-9-]{3,40}$/.test(subdomain)) {
-            return res.status(400).json({ success: false, message: 'Invalid subdomain format' })
+            return res.status(400).json({
+                success: false,
+                message: "Invalid subdomain format"
+            });
+        }
+
+        const project = await Model.Project.findOne({
+            _id: req.params.id,
+            owner: req.user._id
+        });
+
+        if (!project) {
+            return res.status(404).json({
+                success: false,
+                message: "Project not found"
+            });
         }
 
         const conflict = await Model.Project.findOne({
-            subdomain, _id: { $ne: req.params.id }
-        })
-        if (conflict) return res.status(409).json({ success: false, message: 'Subdomain already taken' })
+            subdomain,
+            _id: { $ne: project._id }
+        });
+        if (conflict) {
+            return res.status(409).json({
+                success: false,
+                message: "Subdomain already taken"
+            });
+        }
 
-        const oldProject = await Model.Project.findOneAndUpdate(
-            { _id: req.params.id, owner: req.user._id },
-            { $set: { subdomain } },
-            { new: false }
-        );
+        const oldSubdomain = project.subdomain;
 
-        const allocation = await Model.Binding.findOneAndUpdate({
-            project: req.params.id
-        },
-            {
-                subdomain: subdomain
-            }
-        )
+        const containers = await docker.listContainers({ all: true });
 
-        await redisclient.del(`subdomain:${oldProject.subdomain}`)
-
-        await redisclient.hset(`subdomain:${subdomain}`, {
-            port: allocation.port,
-            projectId: oldProject._id.toString(),
-            plan: oldProject.plan
-        })
-
-        const containers = await docker.listContainers({ all: true })
         const existingcontainer = containers.find(c =>
-            c.Image.includes(`${oldProject.subdomain}`)
-        )
+            c.Image.includes(oldSubdomain)
+        );
 
         if (existingcontainer) {
             const container = docker.getContainer(existingcontainer.Id);
-            const inspect = await container.inspect();
-
-            if (inspect.State.Running) {
-                await container.rename({ name: subdomain });
-            }
+            await container.rename({ name: subdomain });
         }
 
-        res.json({ success: true, subdomain: subdomain })
+        await Model.Project.updateOne(
+            { _id: project._id },
+            { $set: { subdomain } }
+        );
+
+        const allocation = await Model.Binding.findOneAndUpdate(
+            { project: project._id },
+            { subdomain },
+            { new: true }
+        );
+
+        await redisclient.del(`subdomain:${oldSubdomain}`);
+
+        await redisclient.hset(`subdomain:${subdomain}`, {
+            port: allocation.port,
+            projectId: project._id.toString(),
+            plan: project.plan
+        });
+
+        res.json({ success: true, subdomain });
+
     } catch (err) {
-        res.status(500).json({ success: false, message: err.message })
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
     }
-}
+};
 
 
 export const checkCustomDomain = async (req, res) => {
