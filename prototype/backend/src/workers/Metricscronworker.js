@@ -2,7 +2,7 @@ import cron from 'node-cron'
 import { Model } from '../models/index.js'
 
 
-cron.schedule('0 0 * * *', async () => {
+cron.schedule('*/1 * * * *', async () => {
   try {
     const today = new Date().toISOString().slice(0, 10)
 
