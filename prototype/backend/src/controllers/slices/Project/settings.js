@@ -55,7 +55,7 @@ export const updateGeneralSettings = async (req, res) => {
             {
                 returnDocument: 'after',
                 runValidators: true,
-                context: 'query'   // ✅ VERY IMPORTANT
+                context: 'query'
             }
         ).select('name settings')
 

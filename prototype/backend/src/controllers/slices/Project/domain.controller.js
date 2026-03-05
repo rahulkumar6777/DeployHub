@@ -67,12 +67,12 @@ export const updateSubdomain = async (req, res) => {
             }
         )
 
-        await redisclient.del(`subdomain:${subdomain}`)
+        await redisclient.del(`subdomain:${oldProject.subdomain}`)
 
         await redisclient.hset(`subdomain:${subdomain}`, {
             port: allocation.port,
             projectId: req.params._id.toString(),
-            plan: project.plan
+            plan: oldProject.plan
         })
 
         const containers = await docker.listContainers({ all: true })
@@ -89,7 +89,7 @@ export const updateSubdomain = async (req, res) => {
             }
         }
 
-        res.json({ success: true, subdomain })
+        res.json({ success: true, subdomain: subdomain })
     } catch (err) {
         res.status(500).json({ success: false, message: err.message })
     }
