@@ -88,7 +88,8 @@ const worker = new Worker("deployhub-recreate-container", async (job) => {
         })
 
         await Model.Project.findByIdAndUpdate({ _id: projectId }, {
-            subdomain: oldcontainername
+            subdomain: oldcontainername,
+            status: "failed-deploy"
         })
         console.log("Error While contaien restart")
         throw error;
