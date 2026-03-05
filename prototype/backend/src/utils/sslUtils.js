@@ -4,179 +4,177 @@ import fs from "fs"
 import { SslCertificate } from "../models/slices/sslCertificate.js"
 import { Model } from "../models/index.js"
 
-const SERVER_IP       = process.env.SERVER_IP
+const SERVER_IP = process.env.SERVER_IP
 const LETSENCRYPT_DIR = '/etc/letsencrypt/live'
 const NGINX_CUSTOM_DIR = '/etc/nginx/conf.d/custom-domains'
-const PROXY_TARGET    = 'http://masterrouter:8080'
+const PROXY_TARGET = 'http://masterrouter:8080'
 
 
 export async function isDomainPointingToServer(domain) {
-  try {
-    const records = await dns.resolve4(domain)
-    return records.includes(SERVER_IP)
-  } catch {
-    return false
-  }
+    try {
+        const records = await dns.resolve4(domain)
+        return records.includes(SERVER_IP)
+    } catch {
+        return false
+    }
 }
 
 
 export async function generateCertificate(domain, projectId, email = process.env.CERTBOT_EMAIL || 'rahulk48546@gmail.com') {
     console.log("req for generate certificate")
-  const isValid = await isDomainPointingToServer(domain)
-  if (!isValid) throw new Error(`Domain ${domain} is not pointing to this server (${SERVER_IP})`)
+    const isValid = await isDomainPointingToServer(domain)
+    if (!isValid) throw new Error(`Domain ${domain} is not pointing to this server (${SERVER_IP})`)
 
-  
-  const certPath = `${LETSENCRYPT_DIR}/${domain}/fullchain.pem`
-  const existing = fs.existsSync(certPath)
 
-  if (!existing) {
-    const container = await docker.createContainer({
-      Image: 'certbot/certbot',
-      Cmd: [
-        'certonly',
-        '--webroot',
-        '--webroot-path', '/var/www/html',
-        '--non-interactive',
-        '--agree-tos',
-        '--no-eff-email',
-        '--email', email,
-        '--cert-name', domain,
-        '-d', domain,
-      ],
-      HostConfig: {
-        Binds: [
-          '/home/rahul/docker/letsencrypt:/etc/letsencrypt',
-          '/home/rahul/docker/nginx/html:/var/www/html',
-        ],
-        AutoRemove: true,
-        NetworkMode: 'proxy-net',
-      }
-    })
+    const certPath = `${LETSENCRYPT_DIR}/${domain}/fullchain.pem`
+    const existing = fs.existsSync(certPath)
 
-    await container.start()
-    const result = await container.wait()
-    console.log(result)
-    if (result.StatusCode !== 0) throw new Error(`Certbot failed with exit code ${result.StatusCode}`)
-    console.log(`[ssl] Certificate issued for ${domain}`)
-  }
+    if (!existing) {
+        const container = await docker.createContainer({
+            Image: 'certbot/certbot',
+            Cmd: [
+                'certonly',
+                '--webroot',
+                '--webroot-path', '/var/www/html',
+                '--non-interactive',
+                '--agree-tos',
+                '--no-eff-email',
+                '--email', email,
+                '--cert-name', domain,
+                '-d', domain,
+            ],
+            HostConfig: {
+                Binds: [
+                    '/home/rahul/docker/letsencrypt:/etc/letsencrypt',
+                    '/home/rahul/docker/nginx/html:/var/www/html',
+                ],
+                AutoRemove: true,
+                NetworkMode: 'proxy-net',
+            }
+        })
 
-  
-  const issuedAt    = new Date()
-  const expiresAt   = new Date(issuedAt)
-  expiresAt.setDate(expiresAt.getDate() + 90)
-  const nextRenewAt = new Date(expiresAt)
-  nextRenewAt.setDate(nextRenewAt.getDate() - 5)
+        await container.start()
+        const result = await container.wait()
+        console.log(result)
+        if (result.StatusCode !== 0) throw new Error(`Certbot failed with exit code ${result.StatusCode}`)
+        console.log(`[ssl] Certificate issued for ${domain}`)
+    }
 
-  const project = await Model.Project.findById(projectId).select('owner').lean()
 
-  await SslCertificate.findOneAndUpdate(
-    { domain },
-    {
-      $set: {
-        userId:           project?.owner,
-        projectId,
-        domain,
-        issuedAt:         issuedAt.toISOString(),
-        expiresAt:        expiresAt.toISOString(),
-        nextRenewAt,
-        lastRenewAttempt: new Date(),
-        status:           'active',
-      }
-    },
-    { upsert: true, new: true }
-  )
+    const issuedAt = new Date()
+    const expiresAt = new Date(issuedAt)
+    expiresAt.setDate(expiresAt.getDate() + 90)
+    const nextRenewAt = new Date(expiresAt)
+    nextRenewAt.setDate(nextRenewAt.getDate() - 5)
 
-  return { issuedAt: issuedAt.toISOString(), expiresAt: expiresAt.toISOString() }
+    const project = await Model.Project.findById(projectId).select('owner').lean()
+
+    await SslCertificate.findOneAndUpdate(
+        { domain },
+        {
+            $set: {
+                userId: project?.owner,
+                projectId,
+                domain,
+                issuedAt: issuedAt.toISOString(),
+                expiresAt: expiresAt.toISOString(),
+                nextRenewAt,
+                lastRenewAttempt: new Date(),
+                status: 'active',
+            }
+        },
+        { upsert: true, new: true }
+    )
+
+    return { issuedAt: issuedAt.toISOString(), expiresAt: expiresAt.toISOString() }
 }
 
 
 export async function renewCertificate(domain) {
-  const container = await docker.createContainer({
-    Image: 'certbot/certbot',
-    Cmd: [ 'renew', '--cert-name', domain, '--non-interactive' ],
-    HostConfig: {
-      Binds: [
-        '/home/rahul/docker/letsencrypt:/etc/letsencrypt',
-        '/home/rahul/docker/nginx/html:/var/www/html',
-      ],
-      AutoRemove: true,
-      NetworkMode: 'proxy-net',
-    }
-  })
+    const container = await docker.createContainer({
+        Image: 'certbot/certbot',
+        Cmd: ['renew', '--cert-name', domain, '--non-interactive'],
+        HostConfig: {
+            Binds: [
+                '/home/rahul/docker/letsencrypt:/etc/letsencrypt',
+                '/home/rahul/docker/nginx/html:/var/www/html',
+            ],
+            AutoRemove: true,
+            NetworkMode: 'proxy-net',
+        }
+    })
 
-  await container.start()
-  const result = await container.wait()
-  if (result.StatusCode !== 0) throw new Error(`Certbot renew failed for ${domain}`)
+    await container.start()
+    const result = await container.wait()
+    if (result.StatusCode !== 0) throw new Error(`Certbot renew failed for ${domain}`)
 
-  const newExpiry   = new Date()
-  newExpiry.setDate(newExpiry.getDate() + 90)
-  const nextRenewAt = new Date(newExpiry)
-  nextRenewAt.setDate(nextRenewAt.getDate() - 5)
+    const newExpiry = new Date()
+    newExpiry.setDate(newExpiry.getDate() + 90)
+    const nextRenewAt = new Date(newExpiry)
+    nextRenewAt.setDate(nextRenewAt.getDate() - 5)
 
-  await SslCertificate.findOneAndUpdate(
-    { domain },
-    {
-      $set: {
-        issuedAt:         new Date().toISOString(),
-        expiresAt:        newExpiry.toISOString(),
-        nextRenewAt,
-        lastRenewAttempt: new Date(),
-        status:           'active',
-      }
-    }
-  )
-  console.log(`[ssl] Certificate renewed for ${domain}`)
-  return { expiresAt: newExpiry.toISOString() }
+    await SslCertificate.findOneAndUpdate(
+        { domain },
+        {
+            $set: {
+                issuedAt: new Date().toISOString(),
+                expiresAt: newExpiry.toISOString(),
+                nextRenewAt,
+                lastRenewAttempt: new Date(),
+                status: 'active',
+            }
+        }
+    )
+    console.log(`[ssl] Certificate renewed for ${domain}`)
+    return { expiresAt: newExpiry.toISOString() }
 }
 
 
 export function writeNginxConfig(domain) {
-  if (!fs.existsSync(NGINX_CUSTOM_DIR)) {
-    fs.mkdirSync(NGINX_CUSTOM_DIR, { recursive: true })
-  }
+    if (!fs.existsSync(NGINX_CUSTOM_DIR)) {
+        fs.mkdirSync(NGINX_CUSTOM_DIR, { recursive: true })
+    }
 
-  const config = `# Auto-generated by DeployHub — ${domain}
-server {
+    const config = `server {
     listen 443 ssl;
     server_name ${domain};
 
     ssl_certificate     ${LETSENCRYPT_DIR}/${domain}/fullchain.pem;
     ssl_certificate_key ${LETSENCRYPT_DIR}/${domain}/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers HIGH:!aNULL:!MD5;
 
     location / {
         proxy_pass ${PROXY_TARGET};
         proxy_http_version 1.1;
-        proxy_set_header Host              $host;
-        proxy_set_header X-Real-IP         $remote_addr;
-        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header Host              \$host;
+        proxy_set_header X-Real-IP         \$remote_addr;
+        proxy_set_header X-Forwarded-For   \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto https;
-        proxy_set_header Upgrade           $http_upgrade;
+        proxy_set_header Upgrade           \$http_upgrade;
         proxy_set_header Connection        "upgrade";
         client_max_body_size 200M;
     }
 }`
 
-  fs.writeFileSync(`${NGINX_CUSTOM_DIR}/${domain}.conf`, config)
-  console.log(`[ssl] Nginx config written for ${domain}`)
+    fs.writeFileSync(`${NGINX_CUSTOM_DIR}/${domain}.conf`, config)
+    console.log(`[ssl] Nginx config written for ${domain}`)
 }
 
 // ── Remove nginx config ──────────────────────────────────
 export function removeNginxConfig(domain) {
-  const file = `${NGINX_CUSTOM_DIR}/${domain}.conf`
-  if (fs.existsSync(file)) {
-    fs.unlinkSync(file)
-    console.log(`[ssl] Nginx config removed for ${domain}`)
-  }
+    const file = `${NGINX_CUSTOM_DIR}/${domain}.conf`
+    if (fs.existsSync(file)) {
+        fs.unlinkSync(file)
+        console.log(`[ssl] Nginx config removed for ${domain}`)
+    }
 }
 
 
 export async function reloadNginx() {
-  const containers = await docker.listContainers()
-  const nginx = containers.find(c => c.Names.some(n => n.includes('nginx')))
-  if (!nginx) throw new Error('Nginx container not found')
-  const container = docker.getContainer(nginx.Id)
-  await container.kill({ signal: 'SIGHUP' })
-  console.log('[ssl] Nginx reloaded via SIGHUP')
+    const containers = await docker.listContainers()
+    const nginx = containers.find(c => c.Names.some(n => n.includes('nginx')))
+    if (!nginx) throw new Error('Nginx container not found')
+    const container = docker.getContainer(nginx.Id)
+    await container.kill({ signal: 'SIGHUP' })
+    console.log('[ssl] Nginx reloaded via SIGHUP')
 }
