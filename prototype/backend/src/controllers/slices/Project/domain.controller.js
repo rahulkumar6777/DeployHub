@@ -208,11 +208,7 @@ export const removeCustomDomain = async (req, res) => {
             { $set: { status: 'expired' } }
         )
 
-        const allocation = await Model.Binding.findOne({ project: req.params._id })
-        if (allocation) {
-            await redisclient.del(`customdomain:${allocation.customDomain}`)
-        }
-
+        await redisclient.del(`customdomain:${project.customDomain}`)
 
         res.json({ success: true })
     } catch (err) {
