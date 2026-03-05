@@ -9,8 +9,6 @@ function usePageTitle() {
   const map = {
     '/':          'Dashboard',
     '/projects':  'Projects',
-    '/usage':     'Usage',
-    '/billing':   'Billing',
     '/profile':   'Profile',
   }
   if (map[pathname]) return map[pathname]

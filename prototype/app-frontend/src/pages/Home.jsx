@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../api/apiclient' 
 
-// ── Animated counter ───────────────────────────────────────
+
 function Counter({ to, suffix = '' }) {
   const [val, setVal] = useState(0)
   useEffect(() => {
@@ -37,20 +37,64 @@ const STATUS_COLOR = {
   'failed-deploy':'#f87171',
 }
 
-// Fake 7-day chart — swap with real API later
-// Shape: [{day, requests}]
-function buildWeekData(totalReq) {
-  const days    = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
-  const weights = [0.10, 0.18, 0.12, 0.22, 0.17, 0.08, 0.13]
-  return days.map((day, i) => ({ day, v: Math.round(totalReq * weights[i]) }))
+// ── Project Picker Dropdown for Usage & Analytics ──────────
+function ProjectPickerDropdown({ projects, onSelect }) {
+  return (
+    <div
+      className="absolute right-0 top-full mt-1.5 rounded-xl overflow-hidden z-50"
+      style={{
+        minWidth: '220px',
+        background: '#0d1520',
+        border: '1px solid rgba(0,229,255,0.15)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+      }}
+    >
+      <div className="px-3 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <p className="text-[10px] font-bold tracking-[0.15em] uppercase" style={{ color: '#4b5563' }}>
+          Select a Project
+        </p>
+      </div>
+      {projects.length === 0 ? (
+        <div className="px-3 py-3 text-xs" style={{ color: '#374151' }}>No projects found</div>
+      ) : (
+        projects.map(p => (
+          <button
+            key={p._id}
+            onClick={() => onSelect(p._id)}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors"
+            style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,229,255,0.06)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          >
+            <div
+              className="w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0"
+              style={{ background: 'rgba(0,229,255,0.08)', color: '#00e5ff' }}
+            >
+              {p.name.charAt(0).toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold truncate text-white">{p.name}</div>
+              <div className="text-[10px] truncate" style={{ color: '#374151' }}>{p.domain}</div>
+            </div>
+            <span
+              className="w-2 h-2 rounded-full flex-shrink-0"
+              style={{ background: STATUS_COLOR[p.status] || '#6b7280' }}
+            />
+          </button>
+        ))
+      )}
+    </div>
+  )
 }
 
 export function Home() {
   const { user }  = useAuth()
-  const navigate       = useNavigate()
+  const navigate  = useNavigate()
   const [stats, setStats]           = useState(null)
   const [recentProjects, setRecent] = useState([])
   const [loading, setLoading]       = useState(true)
+  const [showPicker, setShowPicker] = useState(false)
+  const pickerRef = useRef(null)
 
   useEffect(() => {
     api.get('/dashboard')
@@ -62,13 +106,22 @@ export function Home() {
       .finally(() => setLoading(false))
   }, [])
 
+  // Close picker on outside click
+  useEffect(() => {
+    function handleClick(e) {
+      if (pickerRef.current && !pickerRef.current.contains(e.target)) {
+        setShowPicker(false)
+      }
+    }
+    if (showPicker) document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [showPicker])
+
   const firstname    = user?.fullname?.split(' ')[0] || 'there'
   const liveCount    = stats?.liveCount    || 0
   const stoppedCount = stats?.stoppedCount || 0
   const totalReq     = stats?.totalRequests || 0
   const recent       = recentProjects
-  const weekData     = buildWeekData(totalReq)
-  const maxBar       = Math.max(...weekData.map(d => d.v), 1)
 
   return (
     <div style={{ maxWidth: '1100px', margin: '0 auto' }} className="space-y-5">
@@ -146,67 +199,11 @@ export function Home() {
         ))}
       </div>
 
-      {/* ── Chart + Recent ── */}
-      <div className="grid lg:grid-cols-3 gap-4">
-
-        {/* Request chart */}
-        <div className="lg:col-span-2 rounded-2xl p-5"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <p className="text-[10px] font-bold tracking-[0.15em] uppercase mb-1" style={{ color: '#4b5563' }}>
-                Requests — Last 7 Days
-              </p>
-              <div className="font-syne font-black text-2xl text-white">
-                {loading ? (
-                  <div className="h-7 w-20 rounded-lg animate-pulse" style={{ background: 'rgba(255,255,255,0.07)' }} />
-                ) : (
-                  <Counter to={totalReq} />
-                )}
-              </div>
-            </div>
-            <span className="text-[10px] font-bold px-3 py-1 rounded-full"
-              style={{ background: 'rgba(255,255,255,0.04)', color: '#4b5563', border: '1px solid rgba(255,255,255,0.06)' }}>
-              All projects
-            </span>
-          </div>
-          <div className="flex items-end gap-2" style={{ height: '96px' }}>
-            {weekData.map((d, i) => {
-              const h = Math.max((d.v / maxBar) * 100, 4)
-              const isToday = i === weekData.length - 1
-              return (
-                <div key={i} className="flex-1 flex flex-col items-center gap-1.5 group/b relative">
-                  <div className="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover/b:opacity-100 pointer-events-none transition-opacity z-10 whitespace-nowrap"
-                    style={{ background: '#0f1623', border: '1px solid rgba(255,255,255,0.08)', color: '#e5e7eb' }}>
-                    {d.v.toLocaleString()}
-                  </div>
-                  <div className="w-full flex items-end" style={{ height: '80px' }}>
-                    <div className="w-full rounded-t-lg transition-all duration-300"
-                      style={{
-                        height: `${h}%`,
-                        minHeight: '4px',
-                        background: isToday
-                          ? 'linear-gradient(180deg, #00e5ff, #0891b2)'
-                          : 'rgba(255,255,255,0.07)',
-                        boxShadow: isToday ? '0 -6px 16px rgba(0,229,255,0.2)' : 'none',
-                      }} />
-                  </div>
-                  <span className="text-[10px]" style={{ color: isToday ? '#00e5ff' : '#374151' }}>
-                    {d.day.slice(0, 1)}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-          <p className="text-[10px] mt-3" style={{ color: '#1f2937' }}>
-            * Chart is estimated from total requests. Connect analytics API for live data.
-          </p>
-        </div>
-
-        {/* Quick actions */}
-        <div className="rounded-2xl p-5 flex flex-col gap-3"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-          <p className="text-[10px] font-bold tracking-[0.15em] uppercase" style={{ color: '#4b5563' }}>Quick Actions</p>
+      {/* ── Quick Actions ── */}
+      <div className="rounded-2xl p-5 flex flex-col gap-3"
+        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+        <p className="text-[10px] font-bold tracking-[0.15em] uppercase" style={{ color: '#4b5563' }}>Quick Actions</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             {
               label: 'Deploy Project',
@@ -224,7 +221,7 @@ export function Home() {
             {
               label: 'Usage & Analytics',
               desc: 'Requests, bandwidth stats',
-              to: '/usage',
+              isPicker: true,
               icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
             },
             {
@@ -259,6 +256,33 @@ export function Home() {
             const style = a.cyan
               ? { background: 'rgba(0,229,255,0.05)', border: '1px solid rgba(0,229,255,0.1)' }
               : { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }
+
+            // ── Usage & Analytics: project picker ──
+            if (a.isPicker) {
+              return (
+                <div key={a.label} className="relative" ref={pickerRef}>
+                  <button
+                    className={cls}
+                    style={style}
+                    onClick={() => setShowPicker(v => !v)}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.04)'}
+                  >
+                    {inner}
+                  </button>
+                  {showPicker && (
+                    <ProjectPickerDropdown
+                      projects={recentProjects}
+                      onSelect={id => {
+                        setShowPicker(false)
+                        navigate(`/project/${id}/metrics`)
+                      }}
+                    />
+                  )}
+                </div>
+              )
+            }
+
             if (a.action) return (
               <button key={a.label} onClick={a.action} className={cls} style={style}
                 onMouseEnter={e => e.currentTarget.style.borderColor = a.cyan ? 'rgba(0,229,255,0.25)' : 'rgba(255,255,255,0.1)'}

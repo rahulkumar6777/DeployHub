@@ -6,15 +6,13 @@ const NAV_GROUPS = [
   {
     section: 'MAIN',
     links: [
-      { to: '/',         label: 'Dashboard', icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
-      { to: '/projects', label: 'Projects',  icon: 'M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2' },
-      { to: '/usage',    label: 'Usage',     icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
+      { to: '/', label: 'Dashboard', icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
+      { to: '/projects', label: 'Projects', icon: 'M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2' },
     ]
   },
   {
     section: 'ACCOUNT',
     links: [
-      { to: '/billing', label: 'Billing', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
       { to: '/profile', label: 'Profile', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
     ]
   },
@@ -33,10 +31,9 @@ export default function Sidebar() {
 
   const close = () => setIsSidebarOpen(false)
 
-  // Real user data from backend — declare before use
-  const fullname   = user?.fullname || 'Account'
+  const fullname = user?.fullname || 'Account'
   const profilePic = user?.profilePic || ''
-  const initials   = fullname.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+  const initials = fullname.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
 
   return (
     <>
@@ -62,7 +59,7 @@ export default function Sidebar() {
           </div>
           <div>
             <div className="font-syne font-black text-[15px] tracking-tight leading-none">
-              Nest<span style={{ color: '#00e5ff' }}>Host</span>
+              Deploy<span style={{ color: '#00e5ff' }}>Hub</span>
             </div>
             <div className="text-[9px] tracking-[0.18em] uppercase mt-0.5" style={{ color: '#374151' }}>
               Web Hosting
@@ -91,7 +88,6 @@ export default function Sidebar() {
                         border: '1px solid transparent',
                         color: '#4b5563',
                       }}>
-                      {/* Active left bar */}
                       {active && (
                         <div className="absolute left-0 top-2 bottom-2 w-0.5 rounded-r-full" style={{ background: '#00e5ff' }} />
                       )}
@@ -112,8 +108,15 @@ export default function Sidebar() {
           {/* Docs */}
           <div>
             <div className="text-[9px] font-black tracking-[0.2em] uppercase px-3 mb-2" style={{ color: '#1f2937' }}>HELP</div>
-            <a href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
-              style={{ border: '1px solid transparent', color: '#4b5563' }}>
+            <a
+              href="https://docs.deployhub.cloud"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
+              style={{ border: '1px solid transparent', color: '#4b5563' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#e5e7eb'}
+              onMouseLeave={e => e.currentTarget.style.color = '#4b5563'}
+            >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
