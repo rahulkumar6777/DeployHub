@@ -12,9 +12,12 @@ cron.schedule('*/1 * * * *', async () => {
     ).lean()
 
     console.log(projects)
-    if (!projects.length) return
+    if (!projects.length) {
+      console.log('[metrics cron] No projects found for', today);
+      return;
+    }
 
-    
+
     const ops = projects.map(p => ({
       updateOne: {
         filter: { projectId: p._id, date: today },
