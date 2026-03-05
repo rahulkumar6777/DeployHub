@@ -3,10 +3,16 @@ export const fullName = async (req, res) => {
     const user = req.user;
 
     const { fullname } = req.body;
-    if(!fullname){
-        return res.status(400).json({
-            message: "fullname is required"
-        })
+    if (!fullname) {
+      return res.status(400).json({
+        message: "fullname is required"
+      })
+    }
+
+    if (user.provider !== 'local') {
+      return res.status(400).json({
+        message: "only local user is allowed to change fullname"
+      })
     }
 
     console.log(user)
