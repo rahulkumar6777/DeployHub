@@ -4,11 +4,13 @@ import docker from '../utils/docker.js';
 import { Worker } from 'bullmq';
 
 const worker = new Worker("deployhub-recreate-container", async (job) => {
-    try {
 
-        const projectId = job.data.projectId
-        const oldcontainername = job.data.oldcontainername
-        const newcontainername = job.data.newcontainername
+    const projectId = job.data.projectId
+    const oldcontainername = job.data.oldcontainername
+    const newcontainername = job.data.newcontainername
+
+
+    try {
 
         try {
             const containers = await docker.listContainers({ all: true });
@@ -80,6 +82,14 @@ const worker = new Worker("deployhub-recreate-container", async (job) => {
             console.log('new container started for node')
         }
     } catch (error) {
+
+        await Model.Binding.findOneAndUpdate({ project: projectId }, {
+            subdomain: oldcontainername
+        })
+
+        await Model.Project.findByIdAndUpdate({ _id: projectId }, {
+            subdomain: oldcontainername
+        })
         console.log("Error While contaien restart")
         throw error;
     }

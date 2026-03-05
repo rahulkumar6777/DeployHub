@@ -2,7 +2,7 @@ import { redisclient } from '../../../configs/redis.js'
 import { Model } from '../../../models/index.js'
 import { SslCertificate } from '../../../models/slices/sslCertificate.js'
 import { isBlockedDomain } from '../../../utils/blockedDomains.js'
-import docker from '../../../utils/docker.js'
+import { recreateContainer } from '../../../utils/queues.js'
 import {
     isDomainPointingToServer,
     generateCertificate,
@@ -43,79 +43,69 @@ export const getProjectDomains = async (req, res) => {
 
 export const updateSubdomain = async (req, res) => {
     try {
-        const { subdomain } = req.body;
+        const { subdomain } = req.body
 
         if (!subdomain || !/^[a-z0-9-]{3,40}$/.test(subdomain)) {
             return res.status(400).json({
                 success: false,
-                message: "Invalid subdomain format"
-            });
+                message: 'Invalid subdomain. Use lowercase letters, numbers, hyphens (3-40 chars).',
+            })
         }
 
-        const project = await Model.Project.findOne({
-            _id: req.params.id,
-            owner: req.user._id
-        });
 
-        if (!project) {
-            return res.status(404).json({
-                success: false,
-                message: "Project not found"
-            });
-        }
-
-        const conflict = await Model.Project.findOne({
+        const existing = await Model.Project.findOne({
             subdomain,
-            _id: { $ne: project._id }
-        });
-        if (conflict) {
+            _id: { $ne: req.params.id },
+            status: { $ne: 'deleted' },
+        }).select('_id').lean()
+
+        if (existing) {
             return res.status(409).json({
                 success: false,
-                message: "Subdomain already taken"
-            });
+                message: 'This subdomain is already taken. Please choose another.',
+            })
         }
 
-        const oldSubdomain = project.subdomain;
+        const project = await Model.Project.findOne({ _id: req.params.id, owner: req.user._id, status: { $ne: 'deleted' } })
 
-        const containers = await docker.listContainers({ all: true });
+        if (!project) return res.status(404).json({ success: false, message: 'Project not found' })
 
-        const existingcontainer = containers.find(c =>
-            c.Image.includes(oldSubdomain)
-        );
-
-        if (existingcontainer) {
-            const container = docker.getContainer(existingcontainer.Id);
-            await container.rename({ name: subdomain });
+        const data = {
+            projectId: project._id,
+            oldcontainername: project.subdomain
         }
 
-        await Model.Project.updateOne(
-            { _id: project._id },
-            { $set: { subdomain } }
-        );
+        project.subdomain = subdomain;
+        project.status = "building"
 
-        const allocation = await Model.Binding.findOneAndUpdate(
-            { project: project._id },
-            { subdomain },
-            { new: true }
-        );
+        await project.save({ validateBeforeSave: false })
 
-        await redisclient.del(`subdomain:${oldSubdomain}`);
+        data.newcontainername = project.subdomain;
 
-        await redisclient.hset(`subdomain:${subdomain}`, {
+        const allocation = await Model.Binding.findOne({ project: project._id })
+        allocation.subdomain = subdomain
+        await allocation.save({ validateBeforeSave: false })
+
+
+        await redisclient.del(`subdomain:${data.oldcontainername}`);
+        await redisclient.hset(`subdomain:${project.subdomain}`, {
             port: allocation.port,
             projectId: project._id.toString(),
             plan: project.plan
         });
 
-        res.json({ success: true, subdomain });
+        await recreateContainer.add('deployhub-recreate-container', data)
 
+        res.status(200).json({
+            success: true,
+            subdomain: project.subdomain,
+            message: 'Subdomain updated. Project is restarting.',
+        })
     } catch (err) {
-        res.status(500).json({
-            success: false,
-            message: err.message
-        });
+        console.error('updateSubdomain error:', err)
+        res.status(500).json({ success: false, message: 'Server error' })
     }
-};
+}
 
 
 export const checkCustomDomain = async (req, res) => {
