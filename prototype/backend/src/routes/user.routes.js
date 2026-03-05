@@ -26,7 +26,6 @@ router.get('/invoice', verifyJWT, contollers.user.Invoice);
 router.get('/user/gitrepos', verifyJWT, contollers.user.getUserRepos)
 router.get('/projects', verifyJWT, contollers.user.getUserProjects)
 router.get('/dashboard', verifyJWT, contollers.user.getDashboardStats)
-router.get('/usage', verifyJWT, contollers.user.getUsageStats)
 
 
 // deployment routes

@@ -25,7 +25,6 @@ import { fullName } from "./slices/user/fullName.controller.js";
 import { Invoice } from "./slices/user/invoices.js";
 import { me } from "./slices/user/me.controller.js";
 import { ProfileChange } from "./slices/user/profile.controller.js";
-import { getUsageStats } from "./slices/user/usage.js";
 
 export const contollers = {
     Auth: {
@@ -53,7 +52,6 @@ export const contollers = {
         getUserRepos,
         getUserProjects,
         getDashboardStats,
-        getUsageStats
     },
     subscription: {
         init: initPayment,

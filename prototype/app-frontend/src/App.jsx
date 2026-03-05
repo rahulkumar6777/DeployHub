@@ -47,7 +47,6 @@ export default function App() {
       <Route element={<ProtectedWithGate><PrivateLayout /></ProtectedWithGate>}>
         <Route path="/" element={<Home />} />
         <Route path="/projects" element={<Projects />} />
-        <Route path="/usage" element={<Usage />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/:type/new" element={<NewDeployment />} />
       </Route>
