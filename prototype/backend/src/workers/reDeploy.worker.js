@@ -97,12 +97,20 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
                     { $inc: { totalBuilds: 1 } }
                 );
 
-                //repofilepath
-                const baserepopath = 'builds'
-                if (!fs.existsSync(baserepopath)) fs.mkdirSync(baserepopath, { recursive: true });
+                // base repo path
+                const baserepopath = path.resolve('builds');
+                if (!fs.existsSync(baserepopath)) {
+                    fs.mkdirSync(baserepopath, { recursive: true });
+                }
 
                 // build filepath
-                buildFilePath = path.join(baserepopath, newBuild._id.toString());
+                buildFilePath = path.resolve(baserepopath, newBuild._id.toString());
+
+                // check build se bahar na jaye user
+                if (!buildFilePath.startsWith(baserepopath)) {
+                    throw new Error('Invalid build path');
+                }
+
                 if (!fs.existsSync(buildFilePath)) fs.mkdirSync(buildFilePath, { recursive: true });
 
 
@@ -257,10 +265,14 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
                 if (isFolder === true) {
                     execSync(
                         `git clone -b ${branchname} --filter=blob:none --sparse ${repoUrlWithAuth} ${buildFilePath}`,
-                        { stdio: "inherit" },
+                        {
+                            stdio: "inherit",
+                            shell: false
+                        },
                     );
                     execSync(`git -C ${buildFilePath} sparse-checkout set ${folderName}`, {
                         stdio: "inherit",
+                        shell: false
                     });
 
                     const folderPath = path.join(buildFilePath, folderName);
@@ -276,6 +288,7 @@ const reDeployMentWorker = new Worker('redeployment', async (job) => {
                 } else {
                     execSync(`git clone -b ${branchname} ${repoUrlWithAuth} ${buildFilePath}`, {
                         stdio: "inherit",
+                        shell: false
                     });
                 }
 

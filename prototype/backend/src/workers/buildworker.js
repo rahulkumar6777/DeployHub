@@ -46,16 +46,22 @@ const buildWorker = new Worker(
         status: "building"
       })
 
-      //repofilepath
-      const baserepopath = "builds";
-      if (!fs.existsSync(baserepopath))
+      // base repo path
+      const baserepopath = path.resolve('builds');
+      if (!fs.existsSync(baserepopath)) {
         fs.mkdirSync(baserepopath, { recursive: true });
+      }
 
       // build filepath
-      const buildFilePath = path.join(baserepopath, buildData._id.toString());
-      if (!fs.existsSync(buildFilePath))
-        fs.mkdirSync(buildFilePath, { recursive: true });
+      buildFilePath = path.resolve(baserepopath, buildData._id.toString());
 
+      // check build se bahar na jaye user
+      if (!buildFilePath.startsWith(baserepopath)) {
+        throw new Error('Invalid build path');
+      }
+      if (!fs.existsSync(buildFilePath)) fs.mkdirSync(buildFilePath, { recursive: true });
+
+      
       // choose dockerfile based on type
       const dockerfilechoose = async (projectType) => {
         return path.join(
@@ -215,10 +221,14 @@ const buildWorker = new Worker(
       if (isFolder === true) {
         execSync(
           `git clone -b ${branchname} --filter=blob:none --sparse ${repoUrlWithAuth} ${buildFilePath}`,
-          { stdio: "inherit" },
+          {
+            stdio: "inherit",
+            shell: false
+          },
         );
         execSync(`git -C ${buildFilePath} sparse-checkout set ${folderName}`, {
           stdio: "inherit",
+          shell: false
         });
 
         const folderPath = path.join(buildFilePath, folderName);
@@ -234,6 +244,7 @@ const buildWorker = new Worker(
       } else {
         execSync(`git clone -b ${branchname} ${repoUrlWithAuth} ${buildFilePath}`, {
           stdio: "inherit",
+          shell: false
         });
       }
 
@@ -272,7 +283,7 @@ const buildWorker = new Worker(
           finishedAt: new Date(),
           ...(logUrl && { logUrl }),
         })
-        
+
       } catch (logErr) {
         console.error('Failed to save error logs:', logErr.message)
       }
