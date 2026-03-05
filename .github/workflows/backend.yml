@@ -63,8 +63,8 @@ jobs:
               --restart always \
               --network cloud \
               -v /var/run/docker.sock:/var/run/docker.sock \
-              -v /docker/nginx/custom-domains:/etc/nginx/conf.d/custom-domains \
-              -v /docker/letsencrypt:/etc/letsencrypt \
+              -v /home/rahul/docker/nginx/custom-domains:/etc/nginx/conf.d/custom-domains \
+              -v /home/rahul/docker/letsencrypt:/etc/letsencrypt \
               -p 127.0.0.1:3003:5000 \
               -e NODE_ENV=${{ secrets.NODE_ENV }} \
               -e PRODUCTIONDB_URI=${{ secrets.PRODUCTIONDB_URI }} \

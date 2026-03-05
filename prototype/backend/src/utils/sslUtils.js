@@ -4,11 +4,16 @@ import fs from "fs"
 import { SslCertificate } from "../models/slices/sslCertificate.js"
 import { Model } from "../models/index.js"
 
-const SERVER_IP = process.env.SERVER_IP
-const LETSENCRYPT_DIR = '/etc/letsencrypt/live'
-const NGINX_CUSTOM_DIR = '/etc/nginx/conf.d/custom-domains'
-const PROXY_TARGET = 'http://masterrouter:8080'
+const SERVER_IP        = process.env.SERVER_IP
+const CERTBOT_EMAIL    = process.env.CERTBOT_EMAIL
 
+const LETSENCRYPT_DIR  = '/etc/letsencrypt/live'
+const NGINX_CUSTOM_DIR = '/etc/nginx/conf.d/custom-domains'
+const PROXY_TARGET     = 'http://masterrouter:8080'
+
+const LETSENCRYPT_BIND = '/home/rahul/docker/letsencrypt:/etc/letsencrypt'
+const NGINX_HTML_BIND  = '/home/rahul/docker/nginx/html:/var/www/html'
+const NETWORK_MODE     = 'proxy-net'
 
 export async function isDomainPointingToServer(domain) {
     try {
@@ -19,12 +24,11 @@ export async function isDomainPointingToServer(domain) {
     }
 }
 
-
-export async function generateCertificate(domain, projectId, email = process.env.CERTBOT_EMAIL || 'rahulk48546@gmail.com') {
+export async function generateCertificate(domain, projectId) {
     console.log("req for generate certificate")
+
     const isValid = await isDomainPointingToServer(domain)
     if (!isValid) throw new Error(`Domain ${domain} is not pointing to this server (${SERVER_IP})`)
-
 
     const certPath = `${LETSENCRYPT_DIR}/${domain}/fullchain.pem`
     const existing = fs.existsSync(certPath)
@@ -39,17 +43,14 @@ export async function generateCertificate(domain, projectId, email = process.env
                 '--non-interactive',
                 '--agree-tos',
                 '--no-eff-email',
-                '--email', email,
+                '--email', CERTBOT_EMAIL,
                 '--cert-name', domain,
                 '-d', domain,
             ],
             HostConfig: {
-                Binds: [
-                    '/home/rahul/docker/letsencrypt:/etc/letsencrypt',
-                    '/home/rahul/docker/nginx/html:/var/www/html',
-                ],
+                Binds: [ LETSENCRYPT_BIND, NGINX_HTML_BIND ],
                 AutoRemove: true,
-                NetworkMode: 'proxy-net',
+                NetworkMode: NETWORK_MODE,
             }
         })
 
@@ -60,9 +61,8 @@ export async function generateCertificate(domain, projectId, email = process.env
         console.log(`[ssl] Certificate issued for ${domain}`)
     }
 
-
-    const issuedAt = new Date()
-    const expiresAt = new Date(issuedAt)
+    const issuedAt    = new Date()
+    const expiresAt   = new Date(issuedAt)
     expiresAt.setDate(expiresAt.getDate() + 90)
     const nextRenewAt = new Date(expiresAt)
     nextRenewAt.setDate(nextRenewAt.getDate() - 5)
@@ -73,14 +73,14 @@ export async function generateCertificate(domain, projectId, email = process.env
         { domain },
         {
             $set: {
-                userId: project?.owner,
+                userId:           project?.owner,
                 projectId,
                 domain,
-                issuedAt: issuedAt.toISOString(),
-                expiresAt: expiresAt.toISOString(),
+                issuedAt:         issuedAt.toISOString(),
+                expiresAt:        expiresAt.toISOString(),
                 nextRenewAt,
                 lastRenewAttempt: new Date(),
-                status: 'active',
+                status:           'active',
             }
         },
         { upsert: true, new: true }
@@ -89,18 +89,14 @@ export async function generateCertificate(domain, projectId, email = process.env
     return { issuedAt: issuedAt.toISOString(), expiresAt: expiresAt.toISOString() }
 }
 
-
 export async function renewCertificate(domain) {
     const container = await docker.createContainer({
         Image: 'certbot/certbot',
         Cmd: ['renew', '--cert-name', domain, '--non-interactive'],
         HostConfig: {
-            Binds: [
-                '/home/rahul/docker/letsencrypt:/etc/letsencrypt',
-                '/home/rahul/docker/nginx/html:/var/www/html',
-            ],
+            Binds: [ LETSENCRYPT_BIND, NGINX_HTML_BIND ],
             AutoRemove: true,
-            NetworkMode: 'proxy-net',
+            NetworkMode: NETWORK_MODE,
         }
     })
 
@@ -108,7 +104,7 @@ export async function renewCertificate(domain) {
     const result = await container.wait()
     if (result.StatusCode !== 0) throw new Error(`Certbot renew failed for ${domain}`)
 
-    const newExpiry = new Date()
+    const newExpiry   = new Date()
     newExpiry.setDate(newExpiry.getDate() + 90)
     const nextRenewAt = new Date(newExpiry)
     nextRenewAt.setDate(nextRenewAt.getDate() - 5)
@@ -117,11 +113,11 @@ export async function renewCertificate(domain) {
         { domain },
         {
             $set: {
-                issuedAt: new Date().toISOString(),
-                expiresAt: newExpiry.toISOString(),
+                issuedAt:         new Date().toISOString(),
+                expiresAt:        newExpiry.toISOString(),
                 nextRenewAt,
                 lastRenewAttempt: new Date(),
-                status: 'active',
+                status:           'active',
             }
         }
     )
@@ -129,19 +125,20 @@ export async function renewCertificate(domain) {
     return { expiresAt: newExpiry.toISOString() }
 }
 
-
 export function writeNginxConfig(domain) {
     if (!fs.existsSync(NGINX_CUSTOM_DIR)) {
         fs.mkdirSync(NGINX_CUSTOM_DIR, { recursive: true })
     }
 
-    const config = `server {
+    const config = `# Auto-generated by DeployHub — ${domain}
+server {
     listen 443 ssl;
     server_name ${domain};
 
     ssl_certificate     ${LETSENCRYPT_DIR}/${domain}/fullchain.pem;
     ssl_certificate_key ${LETSENCRYPT_DIR}/${domain}/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
 
     location / {
         proxy_pass ${PROXY_TARGET};
@@ -160,7 +157,6 @@ export function writeNginxConfig(domain) {
     console.log(`[ssl] Nginx config written for ${domain}`)
 }
 
-// ── Remove nginx config ──────────────────────────────────
 export function removeNginxConfig(domain) {
     const file = `${NGINX_CUSTOM_DIR}/${domain}.conf`
     if (fs.existsSync(file)) {
@@ -168,7 +164,6 @@ export function removeNginxConfig(domain) {
         console.log(`[ssl] Nginx config removed for ${domain}`)
     }
 }
-
 
 export async function reloadNginx() {
     const containers = await docker.listContainers()

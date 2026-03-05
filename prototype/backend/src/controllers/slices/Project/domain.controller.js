@@ -209,7 +209,7 @@ export const removeCustomDomain = async (req, res) => {
         )
 
         const allocation = await Model.Binding.findOne({ project: req.params._id })
-        if (allocation?.customDomain) {
+        if (allocation) {
             await redisclient.del(`customdomain:${allocation.customDomain}`)
         }
 
