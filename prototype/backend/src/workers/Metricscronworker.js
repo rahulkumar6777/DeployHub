@@ -11,6 +11,7 @@ cron.schedule('*/1 * * * *', async () => {
       { _id: 1, totalRequest: 1 }
     ).lean()
 
+    console.log(projects)
     if (!projects.length) return
 
     
