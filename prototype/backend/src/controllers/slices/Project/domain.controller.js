@@ -71,7 +71,7 @@ export const updateSubdomain = async (req, res) => {
 
         await redisclient.hset(`subdomain:${subdomain}`, {
             port: allocation.port,
-            projectId: req.params._id.toString(),
+            projectId: oldProject._id.toString(),
             plan: oldProject.plan
         })
 
