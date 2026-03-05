@@ -26,7 +26,8 @@ cron.schedule('*/1 * * * *', async () => {
       }
     }))
 
-    await Model.DailyMetric.bulkWrite(ops)
+    const bulkWrite = await Model.DailyMetric.bulkWrite(ops)
+    console.log(bulkWrite)
     console.log(`[metrics cron] Snapshotted ${projects.length} projects for ${today}`)
   } catch (err) {
     console.error('[metrics cron] Failed:', err.message)
