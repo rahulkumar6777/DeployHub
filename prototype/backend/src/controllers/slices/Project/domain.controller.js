@@ -139,7 +139,8 @@ export const addCustomDomain = async (req, res) => {
                     await redisclient.hset(`customdomain:${domain}`, {
                         port: allocation.port,
                         projectId: p._id.toString(),
-                        plan: p.plan
+                        plan: p.plan,
+                        subdomain: allocation.subdomain
                     })
 
                     console.log(`[domains] ${domain} provisioned successfully`)
