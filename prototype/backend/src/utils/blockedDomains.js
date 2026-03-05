@@ -14,19 +14,21 @@ const INTERNAL_IPS = [
     /^10\./,
     /^192\.168\./,
     /^172\.(1[6-9]|2\d|3[01])\./,
-    /^169\.254\./,   
-    /^::1$/,       
+    /^169\.254\./,
+    /^::1$/,
+    /^100\.64\./,
+    /^fd[0-9a-f]{2}/i     
 ]
 
 export function isBlockedDomain(domain) {
     const lower = domain.toLowerCase().trim()
 
-    
+
     if (BLOCKED_DOMAINS.some(b =>
         typeof b === 'string' ? lower === b : b.test(lower)
     )) return true
 
-    
+
     if (INTERNAL_IPS.some(r => r.test(lower))) return true
 
     if (!/^[a-z0-9][a-z0-9\-\.]+\.[a-z]{2,}$/.test(lower)) return true
