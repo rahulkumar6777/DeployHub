@@ -121,7 +121,7 @@ export const addCustomDomain = async (req, res) => {
         const allocation = await Model.Binding.findOne({ project: req.params.id })
         if (allocation) {
             allocation.customDomain = domain
-            await allocation.save({ validateBeforeSave: fasle })
+            await allocation.save({ validateBeforeSave: false })
         }
 
         res.json({ success: true, message: 'Provisioning started', domain })
