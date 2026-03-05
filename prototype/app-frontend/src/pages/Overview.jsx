@@ -55,6 +55,68 @@ function Skeleton({ w = 'w-24', h = 'h-3' }) {
   return <div className={`${w} ${h} rounded-lg animate-pulse`} style={{ background: 'rgba(255,255,255,0.06)' }} />
 }
 
+// ── Confirm Modal ─────────────────────────────────────────
+function ConfirmRedeployModal({ projectName, onConfirm, onCancel, loading }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)' }}>
+      <div className="w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl"
+        style={{ background: '#0c1118', border: '1px solid rgba(255,255,255,0.09)' }}>
+        {/* Top gradient line */}
+        <div className="h-px w-full" style={{ background: 'linear-gradient(90deg, transparent, #00e5ff, transparent)' }} />
+
+        <div className="p-6">
+          {/* Icon */}
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
+            style={{ background: 'rgba(0,229,255,0.08)', border: '1px solid rgba(0,229,255,0.15)' }}>
+            <svg className="w-6 h-6" style={{ color: '#00e5ff' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </div>
+
+          <h3 className="font-syne font-black text-lg text-white mb-1">Redeploy Project?</h3>
+          <p className="text-sm mb-6" style={{ color: '#6b7280' }}>
+            This will trigger a fresh build and redeploy for{' '}
+            <span className="font-bold" style={{ color: '#9ca3af' }}>{projectName}</span>.
+            The current deployment will be replaced.
+          </p>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onCancel}
+              disabled={loading}
+              className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all hover:scale-105 disabled:opacity-40"
+              style={{ background: 'rgba(255,255,255,0.05)', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.08)' }}>
+              Cancel
+            </button>
+            <button
+              onClick={onConfirm}
+              disabled={loading}
+              className="flex-1 py-2.5 rounded-xl text-sm font-bold text-black transition-all hover:scale-105 disabled:opacity-60 flex items-center justify-center gap-2"
+              style={{ background: 'linear-gradient(135deg, #00e5ff, #00b8cc)', boxShadow: '0 4px 16px rgba(0,229,255,0.25)' }}>
+              {loading ? (
+                <>
+                  <div className="w-3.5 h-3.5 rounded-full border-2 border-black border-t-transparent animate-spin" />
+                  Deploying…
+                </>
+              ) : (
+                <>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Yes, Redeploy
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Overview() {
   const { id: projectId } = useParams()
 
@@ -62,6 +124,10 @@ export default function Overview() {
   const [lastBuild, setLastBuild] = useState(null)
   const [loading,   setLoading]   = useState(true)
   const [error,     setError]     = useState(null)
+
+  const [showConfirm,    setShowConfirm]    = useState(false)
+  const [redeployLoading, setRedeployLoading] = useState(false)
+  const [redeployError,   setRedeployError]   = useState(null)
 
   useEffect(() => {
     setLoading(true)
@@ -73,6 +139,22 @@ export default function Overview() {
       .catch(() => setError('Failed to load project.'))
       .finally(() => setLoading(false))
   }, [projectId])
+
+  async function handleRedeploy() {
+    setRedeployLoading(true)
+    setRedeployError(null)
+    try {
+      const res = await api.post(`/redeploy/${projectId}`)
+      if (res.status === 200) {
+        setProject(prev => ({ ...prev, status: 'building' }))
+        setShowConfirm(false)
+      }
+    } catch (err) {
+      setRedeployError(err?.response?.data?.message || 'Failed to redeploy. Please try again.')
+    } finally {
+      setRedeployLoading(false)
+    }
+  }
 
   if (error) return (
     <div className="flex items-center justify-center h-48">
@@ -88,6 +170,16 @@ export default function Overview() {
 
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto' }} className="space-y-5 pb-8">
+
+      {/* Confirm Redeploy Modal */}
+      {showConfirm && (
+        <ConfirmRedeployModal
+          projectName={p?.name}
+          onConfirm={handleRedeploy}
+          onCancel={() => { setShowConfirm(false); setRedeployError(null) }}
+          loading={redeployLoading}
+        />
+      )}
 
       {/* ── Header ── */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -137,18 +229,29 @@ export default function Overview() {
                 </svg>
                 Visit Site
               </a>
-              <Link to={`/project/${projectId}/builds`}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all hover:scale-105"
+              <button
+                onClick={() => setShowConfirm(true)}
+                disabled={redeployLoading}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all hover:scale-105 disabled:opacity-50"
                 style={{ background: 'rgba(255,255,255,0.04)', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.07)' }}>
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
                 Redeploy
-              </Link>
+              </button>
             </>
           )}
         </div>
       </div>
+
+      {/* Redeploy error */}
+      {redeployError && (
+        <div className="px-4 py-3 rounded-xl text-sm flex items-center justify-between"
+          style={{ color: '#f87171', background: 'rgba(248,113,113,0.07)', border: '1px solid rgba(248,113,113,0.15)' }}>
+          {redeployError}
+          <button onClick={() => setRedeployError(null)} className="ml-3 opacity-60 hover:opacity-100">✕</button>
+        </div>
+      )}
 
       {/* ── Stat cards ── */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">

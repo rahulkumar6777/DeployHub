@@ -46,10 +46,8 @@ function timeAgo(dateStr) {
   return `${days}d ago`
 }
 
-function ProjectCard({ project, onMenuAction, actionLoading }) {
+function ProjectCard({ project }) {
   const navigate = useNavigate()
-  const [menuOpen, setMenuOpen] = useState(false)
-  const isLive = project.status === 'live'
 
   return (
     <div className="relative rounded-2xl overflow-hidden transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
@@ -57,14 +55,13 @@ function ProjectCard({ project, onMenuAction, actionLoading }) {
       onMouseEnter={e => e.currentTarget.style.border = '1px solid rgba(255,255,255,0.1)'}
       onMouseLeave={e => e.currentTarget.style.border = '1px solid rgba(255,255,255,0.06)'}
       onClick={e => {
-        // Don't navigate if clicking menu, links or buttons inside card
         if (e.target.closest('button') || e.target.closest('a')) return
         navigate(`/project/${project._id}`)
       }}>
 
       {/* Top accent */}
       <div className="h-px w-full" style={{
-        background: isLive
+        background: project.status === 'live'
           ? 'linear-gradient(90deg, #34d399, transparent)'
           : project.status === 'failed-deploy'
           ? 'linear-gradient(90deg, #f87171, transparent)'
@@ -90,47 +87,8 @@ function ProjectCard({ project, onMenuAction, actionLoading }) {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div className="flex-shrink-0">
             <StatusPill status={project.status} />
-            <div className="relative">
-              <button onClick={() => setMenuOpen(p => !p)}
-                className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
-                style={{ color: '#4b5563' }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#e5e7eb' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#4b5563' }}>
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <circle cx="5" cy="12" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" />
-                </svg>
-              </button>
-              {menuOpen && (
-                <>
-                  <div className="fixed inset-0 z-20" onClick={() => setMenuOpen(false)} />
-                  <div className="absolute right-0 top-8 w-44 rounded-xl py-1.5 z-30 shadow-2xl"
-                    style={{ background: '#0c1118', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    {[
-                      { label: isLive ? '⏹ Stop Project' : '▶ Start Project', action: 'toggle' },
-                      { label: '🔄 Redeploy', action: 'redeploy' },
-                      { label: '🗑 Delete', action: 'delete', danger: true },
-                    ].map(item => {
-                      const isRunning = actionLoading === item.action
-                      return (
-                        <button key={item.label} disabled={isRunning}
-                          onClick={() => { setMenuOpen(false); onMenuAction?.(item.action, project._id) }}
-                          className="w-full text-left px-4 py-2 text-sm transition-colors flex items-center gap-2 disabled:opacity-50"
-                          style={{ color: item.danger ? '#f87171' : '#9ca3af' }}
-                          onMouseEnter={e => { if (!isRunning) e.currentTarget.style.background = item.danger ? 'rgba(248,113,113,0.08)' : 'rgba(255,255,255,0.04)' }}
-                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                          {isRunning
-                            ? <><div className="w-3 h-3 rounded-full border-2 border-current border-t-transparent animate-spin" /> Processing...</>
-                            : item.label
-                          }
-                        </button>
-                      )
-                    })}
-                  </div>
-                </>
-              )}
-            </div>
           </div>
         </div>
 
@@ -146,7 +104,7 @@ function ProjectCard({ project, onMenuAction, actionLoading }) {
           <span className="truncate">{project.domain}</span>
         </a>
 
-        {/* Stats — no RAM, no uptime */}
+        {/* Stats */}
         <div className="grid grid-cols-2 gap-2 mb-4">
           {[
             { label: 'Requests', value: project.totalRequest ? project.totalRequest.toLocaleString() : '0' },
@@ -226,14 +184,12 @@ function EmptyState({ navigate }) {
 export function Projects() {
   const navigate = useNavigate()
 
-  const [projects, setProjects]             = useState([])
-  const [loading, setLoading]               = useState(true)
-  const [error, setError]                   = useState(null)
-  const [filter, setFilter]                 = useState('all')
-  const [sort, setSort]                     = useState('recent')
+  const [projects, setProjects] = useState([])
+  const [loading, setLoading]   = useState(true)
+  const [error, setError]       = useState(null)
+  const [filter, setFilter]     = useState('all')
+  const [sort, setSort]         = useState('recent')
   const [showTypeSelector, setShowTypeSelector] = useState(false)
-  const [actionLoading, setActionLoading]   = useState({}) // { projectId: 'redeploy' | 'toggle' | 'delete' }
-  const [actionError, setActionError]       = useState(null)
 
   useEffect(() => {
     setLoading(true)
@@ -253,30 +209,6 @@ export function Projects() {
       if (sort === 'requests') return b.totalRequest - a.totalRequest
       return new Date(b.createdAt) - new Date(a.createdAt)
     })
-
-  async function handleMenuAction(action, projectId) {
-    if (actionLoading[projectId]) return
-
-    setActionError(null)
-    setActionLoading(p => ({ ...p, [projectId]: action }))
-
-    try {
-      if (action === 'redeploy') {
-        const res = await api.post(`/redeploy/${projectId}`)
-        if (res.status === 200) {
-          // Optimistically update status to building
-          setProjects(prev => prev.map(p =>
-            p._id === projectId ? { ...p, status: 'building' } : p
-          ))
-        }
-      }
-      // toggle / delete — wire up when APIs ready
-    } catch (err) {
-      setActionError(err?.response?.data?.message || `Failed to ${action} project.`)
-    } finally {
-      setActionLoading(p => { const n = { ...p }; delete n[projectId]; return n })
-    }
-  }
 
   return (
     <div style={{ maxWidth: '1100px', margin: '0 auto' }} className="space-y-5">
@@ -353,15 +285,6 @@ export function Projects() {
         </div>
       )}
 
-      {/* Action error */}
-      {actionError && (
-        <div className="px-4 py-3 rounded-xl text-sm flex items-center justify-between"
-          style={{ color: '#f87171', background: 'rgba(248,113,113,0.07)', border: '1px solid rgba(248,113,113,0.15)' }}>
-          {actionError}
-          <button onClick={() => setActionError(null)} className="ml-3 opacity-60 hover:opacity-100">✕</button>
-        </div>
-      )}
-
       {/* Filter bar */}
       {!loading && projects.length > 0 && (
         <div className="flex items-center justify-between flex-wrap gap-3">
@@ -398,8 +321,7 @@ export function Projects() {
           <EmptyState navigate={navigate} />
         ) : (
           filtered.map(p => (
-            <ProjectCard key={p._id} project={p} onMenuAction={handleMenuAction}
-              actionLoading={actionLoading[p._id]} />
+            <ProjectCard key={p._id} project={p} />
           ))
         )}
       </div>
