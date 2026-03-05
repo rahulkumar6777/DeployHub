@@ -321,7 +321,7 @@ export default function Domains() {
                   style={{ background: 'rgba(0,229,255,0.04)', border: '1px solid rgba(0,229,255,0.1)' }}>
                   <p><span style={{ color: '#374151' }}>Type:</span>  <span className="text-white">A</span></p>
                   <p><span style={{ color: '#374151' }}>Name:</span>  <span className="text-white">@ (or your subdomain)</span></p>
-                  <p><span style={{ color: '#374151' }}>Value:</span> <span style={{ color: '#00e5ff' }}>{process.env.VITE_SERVER_IP || 'YOUR_SERVER_IP'}</span></p>
+                  <p><span style={{ color: '#374151' }}>Value:</span> <span style={{ color: '#00e5ff' }}>{import.meta.env.VITE_SERVER_IP}</span></p>
                 </div>
                 <p className="mt-1">3. Click "Check DNS" below</p>
               </div>
