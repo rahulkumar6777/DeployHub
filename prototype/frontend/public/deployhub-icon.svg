@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#060a0f"/>
+      <stop offset="100%" style="stop-color:#0d1520"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00e5ff"/>
+      <stop offset="100%" style="stop-color:#00b8cc"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#00e5ff;stop-opacity:0.3"/>
+      <stop offset="100%" style="stop-color:#00e5ff;stop-opacity:0"/>
+    </linearGradient>
+    <filter id="glowfx" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softglow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <clipPath id="roundclip">
+      <rect width="512" height="512" rx="112" ry="112"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="112" ry="112" fill="url(#bg)"/>
+
+  <!-- Subtle grid lines -->
+  <g opacity="0.04" stroke="#00e5ff" stroke-width="1">
+    <line x1="0" y1="128" x2="512" y2="128"/>
+    <line x1="0" y1="256" x2="512" y2="256"/>
+    <line x1="0" y1="384" x2="512" y2="384"/>
+    <line x1="128" y1="0" x2="128" y2="512"/>
+    <line x1="256" y1="0" x2="256" y2="512"/>
+    <line x1="384" y1="0" x2="384" y2="512"/>
+  </g>
+
+  <!-- Glow orb behind icon -->
+  <ellipse cx="256" cy="270" rx="140" ry="100" fill="url(#glow)" opacity="0.6"/>
+
+  <!-- Upload arrow / deploy arrow — main mark -->
+  <!-- Arrow shaft -->
+  <rect x="236" y="200" width="40" height="130" rx="20" fill="url(#cyan)" filter="url(#glowfx)"/>
+
+  <!-- Arrow head -->
+  <polygon points="256,118 196,210 316,210" fill="url(#cyan)" filter="url(#glowfx)"/>
+
+  <!-- Base platform — cloud/server line -->
+  <rect x="140" y="355" width="232" height="18" rx="9" fill="url(#cyan)" opacity="0.9" filter="url(#softglow)"/>
+
+  <!-- Two small legs under platform -->
+  <rect x="175" y="370" width="16" height="28" rx="8" fill="#00e5ff" opacity="0.5"/>
+  <rect x="321" y="370" width="16" height="28" rx="8" fill="#00e5ff" opacity="0.5"/>
+
+  <!-- Corner accent dots -->
+  <circle cx="80" cy="80" r="4" fill="#00e5ff" opacity="0.3"/>
+  <circle cx="432" cy="80" r="4" fill="#00e5ff" opacity="0.3"/>
+  <circle cx="80" cy="432" r="4" fill="#00e5ff" opacity="0.3"/>
+  <circle cx="432" cy="432" r="4" fill="#00e5ff" opacity="0.3"/>
+
+  <!-- Border ring -->
+  <rect x="1" y="1" width="510" height="510" rx="111" ry="111" fill="none" stroke="#00e5ff" stroke-width="1.5" opacity="0.15"/>
+</svg>
