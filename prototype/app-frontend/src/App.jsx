@@ -7,7 +7,6 @@ import Home from "./pages/Home";
 import PrivateLayout from "./layouts/PrivateLayout";
 import ProjectLayout from "./layouts/ProjectLayout";
 import Projects from "./pages/Project";
-import Usage from "./pages/Usage";
 import VerificationGate from "./components/VerificationGate";
 import VerifyPage from "./pages/verify";
 import Billing from "./pages/Billing";
