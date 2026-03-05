@@ -63,6 +63,8 @@ jobs:
               --restart always \
               --network cloud \
               -v /var/run/docker.sock:/var/run/docker.sock \
+              -v /docker/nginx/custom-domains:/etc/nginx/conf.d/custom-domains \
+              -v /docker/letsencrypt:/etc/letsencrypt \
               -p 127.0.0.1:3003:5000 \
               -e NODE_ENV=${{ secrets.NODE_ENV }} \
               -e PRODUCTIONDB_URI=${{ secrets.PRODUCTIONDB_URI }} \
@@ -91,4 +93,6 @@ jobs:
               -e MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY }} \
               -e MINIO_INTERNAL_HOST=${{ secrets.MINIO_INTERNAL_HOST }} \
               -e MINIO_PUBLIC_HOST=${{ secrets.MINIO_PUBLIC_HOST }} \
+              -e SERVER_IP=${{ secrets.SERVER_IP }} \
+              -e CERTBOT_EMAIL=${{ secrets.CERTBOT_EMAIL }} \
               ${{ secrets.DOCKER_USERNAME }}/backenddeployhub:latest

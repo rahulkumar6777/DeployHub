@@ -2,6 +2,7 @@ import express from 'express';
 import { contollers } from '../controllers/index.js';
 import { verifyJWT } from '../middlewares/Auth.js';
 import upload from '../middlewares/multer.middleware.js';
+import { addCustomDomain, checkCustomDomain, getCustomDomainStatus, getProjectDomains, removeCustomDomain, updateSubdomain } from '../controllers/slices/Project/domain.controller.js';
 
 const router = express.Router();
 
@@ -48,9 +49,14 @@ router.delete('/projects/:id', verifyJWT, contollers.Project.settings.deleteProj
 router.get('/projects/:id/builds', verifyJWT, contollers.Project.logs.getProjectBuilds)
 router.get('/projects/:id/builds/:buildId', verifyJWT, contollers.Project.logs.getBuildById)
 router.get('/projects/:id/billing', verifyJWT, contollers.Project.billing.getProjectBilling)
-router.get('/projects/:id/domains', verifyJWT, contollers.Project.domain.getProjectDomains)
-router.patch('/projects/:id/domains/subdomain', verifyJWT, contollers.Project.domain.updateSubdomain)
 router.get('/projects/:id/logs-status', verifyJWT, contollers.Project.logs.getLogsStatus)
 router.get('/projects/:id/metrics', verifyJWT, contollers.Project.getProjectMetrics)
+router.get('/projects/:id/domains', verifyJWT, getProjectDomains)
+router.patch('/projects/:id/domains/subdomain', verifyJWT, updateSubdomain)
+router.get('/projects/:id/domains/custom/check', verifyJWT, checkCustomDomain)
+router.post('/projects/:id/domains/custom', verifyJWT, addCustomDomain)
+router.get('/projects/:id/domains/custom/status', verifyJWT, getCustomDomainStatus)
+router.delete('/projects/:id/domains/custom', verifyJWT, removeCustomDomain)
+
 
 export default router;

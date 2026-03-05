@@ -1,268 +1,391 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
-import { api } from '../api/apiclient' 
+import { api } from '../api/apiclient'
 
-function Toast({ msg, type, onClose }) {
-  useEffect(() => {
-    if (!msg) return
-    const t = setTimeout(onClose, 3000)
-    return () => clearTimeout(t)
-  }, [msg])
-  if (!msg) return null
+function Badge({ children, color = '#00e5ff' }) {
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl text-sm font-medium"
+    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
       style={{
-        background: type === 'success' ? 'rgba(52,211,153,0.1)' : 'rgba(248,113,113,0.1)',
-        border: '1px solid ' + (type === 'success' ? 'rgba(52,211,153,0.3)' : 'rgba(248,113,113,0.3)'),
-        color: type === 'success' ? '#34d399' : '#f87171',
+        background: `${color}15`,
+        color,
+        border: `1px solid ${color}30`,
       }}>
-      {type === 'success' ? '✓' : '✕'} {msg}
-      <button onClick={onClose} className="ml-1 opacity-60 hover:opacity-100">✕</button>
-    </div>
+      {children}
+    </span>
   )
 }
 
-function Skeleton({ w, h }) {
-  return <div className={(w || 'w-full') + ' ' + (h || 'h-4') + ' rounded-lg animate-pulse'}
-    style={{ background: 'rgba(255,255,255,0.06)' }} />
+function StatusBadge({ status }) {
+  const map = {
+    active:       { label: 'Active',       color: '#34d399' },
+    provisioning: { label: 'Provisioning', color: '#f59e0b' },
+    failed:       { label: 'Failed',       color: '#f87171' },
+  }
+  const s = map[status] || { label: status, color: '#6b7280' }
+  return (
+    <span className="flex items-center gap-1.5">
+      <span className={'w-1.5 h-1.5 rounded-full ' + (status === 'provisioning' ? 'animate-pulse' : '')}
+        style={{ background: s.color }} />
+      <span className="text-xs font-bold" style={{ color: s.color }}>{s.label}</span>
+    </span>
+  )
 }
 
 export default function Domains() {
   const { id: projectId } = useParams()
 
-  const [project,    setProject]    = useState(null)
-  const [loading,    setLoading]    = useState(true)
-  const [subdomain,  setSubdomain]  = useState('')
-  const [subSaving,  setSubSaving]  = useState(false)
-  const [subError,   setSubError]   = useState('')
-  const [toast,      setToast]      = useState({ msg: '', type: 'success' })
+  const [data,        setData]        = useState(null)
+  const [loading,     setLoading]     = useState(true)
 
+  // Subdomain state
+  const [subdomain,   setSubdomain]   = useState('')
+  const [subSaving,   setSubSaving]   = useState(false)
+  const [subToast,    setSubToast]    = useState(null)
+
+  // Custom domain state
+  const [customInput, setCustomInput] = useState('')
+  const [checkResult, setCheckResult] = useState(null)  // { pointing, message }
+  const [checking,    setChecking]    = useState(false)
+  const [adding,      setAdding]      = useState(false)
+  const [customToast, setCustomToast] = useState(null)
+
+  const pollRef = useRef(null)
+
+  // ── Fetch domains ─────────────────────────────────────
   useEffect(() => {
-    api.get('/projects/' + projectId + '/domains')
-      .then(r => {
-        console.log(r)
-        setProject(r.data.project)
-        setSubdomain(r.data.project.subdomain || '')
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false))
+    fetchDomains()
+    return () => clearInterval(pollRef.current)
   }, [projectId])
 
-  const isPro = project?.plan === 'pro'
+  async function fetchDomains() {
+    try {
+      const r = await api.get(`/projects/${projectId}/domains`)
+      setData(r.data)
+      setSubdomain(r.data.subdomain || '')
 
-  // Subdomain validation
-  function validateSubdomain(val) {
-    if (!val) return 'Subdomain cannot be empty'
-    if (val.length < 3) return 'Minimum 3 characters'
-    if (val.length > 40) return 'Maximum 40 characters'
-    if (!/^[a-z0-9-]+$/.test(val)) return 'Only lowercase letters, numbers and hyphens allowed'
-    if (val.startsWith('-') || val.endsWith('-')) return 'Cannot start or end with a hyphen'
-    return ''
+      // If provisioning → start polling
+      if (r.data.customDomainStatus === 'provisioning') {
+        startPolling()
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  function handleSubdomainChange(val) {
-    const clean = val.toLowerCase().replace(/[^a-z0-9-]/g, '')
-    setSubdomain(clean)
-    setSubError(validateSubdomain(clean))
+  function startPolling() {
+    clearInterval(pollRef.current)
+    pollRef.current = setInterval(async () => {
+      try {
+        const r = await api.get(`/projects/${projectId}/domains/custom/status`)
+        if (r.data.customDomainStatus !== 'provisioning') {
+          clearInterval(pollRef.current)
+          setData(prev => ({ ...prev, ...r.data }))
+          if (r.data.customDomainStatus === 'active') {
+            setCustomToast({ type: 'success', msg: 'Custom domain is now active!' })
+          } else if (r.data.customDomainStatus === 'failed') {
+            setCustomToast({ type: 'error', msg: 'Provisioning failed. Check DNS and try again.' })
+          }
+        }
+      } catch {}
+    }, 4000)
   }
+
+  function toast(setter, type, msg) {
+    setter({ type, msg })
+    setTimeout(() => setter(null), 4000)
+  }
+
+  // ── Subdomain save ────────────────────────────────────
+  const subChanged = subdomain !== data?.subdomain && subdomain.length >= 3
+  const subValid   = /^[a-z0-9-]{3,40}$/.test(subdomain)
 
   async function saveSubdomain() {
-    const err = validateSubdomain(subdomain)
-    if (err) { setSubError(err); return }
-    if (subdomain === project?.subdomain) {
-      setToast({ msg: 'No changes to save', type: 'error' })
-      return
-    }
+    if (!subValid || !subChanged) return
     setSubSaving(true)
     try {
-      await api.patch('/projects/' + projectId + '/domains/subdomain', { subdomain })
-      setProject(p => ({ ...p, subdomain }))
-      setToast({ msg: 'Subdomain updated successfully', type: 'success' })
+      await api.patch(`/projects/${projectId}/domains/subdomain`, { subdomain })
+      setData(prev => ({ ...prev, subdomain }))
+      toast(setSubToast, 'success', 'Subdomain updated')
     } catch (err) {
-      const msg = err?.response?.data?.message || 'Failed to update subdomain'
-      setToast({ msg, type: 'error' })
+      toast(setSubToast, 'error', err?.response?.data?.message || 'Failed')
     } finally {
       setSubSaving(false)
     }
   }
 
-  const currentDomain = project?.subdomain + '.deployhub.online'
+  // ── DNS Check ─────────────────────────────────────────
+  async function checkDNS() {
+    if (!customInput.trim()) return
+    setChecking(true)
+    setCheckResult(null)
+    try {
+      const r = await api.get(`/projects/${projectId}/domains/custom/check`, {
+        params: { domain: customInput.trim() }
+      })
+      setCheckResult(r.data)
+    } catch (err) {
+      setCheckResult({ pointing: false, message: err?.response?.data?.message || 'Check failed' })
+    } finally {
+      setChecking(false)
+    }
+  }
+
+  // ── Add custom domain ─────────────────────────────────
+  async function addDomain() {
+    if (!checkResult?.pointing) return
+    setAdding(true)
+    try {
+      await api.post(`/projects/${projectId}/domains/custom`, { domain: customInput.trim() })
+      setData(prev => ({ ...prev, customDomain: customInput.trim(), customDomainStatus: 'provisioning' }))
+      setCustomInput('')
+      setCheckResult(null)
+      startPolling()
+      toast(setCustomToast, 'info', 'Provisioning SSL certificate...')
+    } catch (err) {
+      toast(setCustomToast, 'error', err?.response?.data?.message || 'Failed')
+    } finally {
+      setAdding(false)
+    }
+  }
+
+  // ── Remove custom domain ──────────────────────────────
+  async function removeDomain() {
+    if (!window.confirm(`Remove ${data.customDomain}?`)) return
+    try {
+      await api.delete(`/projects/${projectId}/domains/custom`)
+      setData(prev => ({ ...prev, customDomain: null, hascustomDomain: false, customDomainStatus: null, ssl: null }))
+      toast(setCustomToast, 'success', 'Custom domain removed')
+    } catch (err) {
+      toast(setCustomToast, 'error', err?.response?.data?.message || 'Failed')
+    }
+  }
+
+  const isPro = data?.plan === 'pro'
+
+  if (loading) return (
+    <div className="space-y-4 animate-pulse">
+      {[1,2].map(i => (
+        <div key={i} className="h-36 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)' }} />
+      ))}
+    </div>
+  )
 
   return (
-    <div style={{ maxWidth: '720px', margin: '0 auto' }} className="space-y-5 pb-10">
+    <div style={{ maxWidth: '720px', margin: '0 auto' }} className="space-y-5 pb-6">
 
       {/* Header */}
       <div>
-        <p className="text-xs font-bold tracking-[0.15em] uppercase mb-1.5" style={{ color: '#00e5ff' }}>Domains</p>
-        <h1 className="font-syne font-black text-[26px] text-white leading-none">Domains</h1>
+        <p className="text-xs font-bold tracking-[0.15em] uppercase mb-1" style={{ color: '#00e5ff' }}>Domains</p>
+        <h1 className="font-syne font-black text-[24px] text-white leading-none">Domain Settings</h1>
       </div>
 
-      {/* ── Current Domain ── */}
-      <div className="rounded-2xl overflow-hidden"
+      {/* ── Subdomain ───────────────────────────────────── */}
+      <div className="rounded-2xl p-5 space-y-4"
         style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="px-6 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          <h2 className="font-syne font-bold text-white text-[15px]">Active Domain</h2>
-          <p className="text-xs mt-0.5" style={{ color: '#4b5563' }}>Your project is live at this address</p>
+
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-bold text-white">Subdomain</p>
+            <p className="text-xs mt-0.5" style={{ color: '#374151' }}>Your project's default URL</p>
+          </div>
+          <Badge color="#00e5ff">Free</Badge>
         </div>
-        <div className="p-6">
-          {loading ? (
-            <Skeleton w="w-64" h="h-6" />
-          ) : (
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl"
-                style={{ background: 'rgba(0,229,255,0.05)', border: '1px solid rgba(0,229,255,0.15)' }}>
-                <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#34d399' }} />
-                <span className="font-mono text-sm font-bold" style={{ color: '#00e5ff' }}>
-                  {project?.hascustomDomain && project?.customDomain
-                    ? project.customDomain
-                    : currentDomain}
-                </span>
-              </div>
-              <a href={'https://' + (project?.hascustomDomain && project?.customDomain ? project.customDomain : currentDomain)}
-                target="_blank" rel="noreferrer"
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all hover:scale-105"
-                style={{ background: 'rgba(255,255,255,0.04)', color: '#6b7280', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-                Visit
-              </a>
-            </div>
-          )}
+
+        {/* Input */}
+        <div className="flex items-center gap-0 rounded-xl overflow-hidden"
+          style={{ border: `1px solid ${subChanged && subValid ? 'rgba(0,229,255,0.35)' : 'rgba(255,255,255,0.08)'}` }}>
+          <input
+            value={subdomain}
+            onChange={e => setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+            className="flex-1 px-4 py-2.5 bg-transparent outline-none text-sm text-white font-mono"
+            placeholder="your-subdomain"
+          />
+          <span className="px-3 py-2.5 text-sm font-mono border-l flex-shrink-0"
+            style={{ color: '#374151', borderColor: 'rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
+            .deployhub.online
+          </span>
         </div>
+
+        {/* Preview */}
+        <a href={`https://${subdomain}.deployhub.online`} target="_blank" rel="noreferrer"
+          className="flex items-center gap-1.5 text-xs transition-opacity hover:opacity-70"
+          style={{ color: '#00e5ff' }}>
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+          https://{subdomain}.deployhub.online
+        </a>
+
+        {/* Warning if changed */}
+        {subChanged && (
+          <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl text-xs"
+            style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.2)', color: '#f59e0b' }}>
+            ⚠ Old URL <span className="font-mono">{data?.subdomain}.deployhub.online</span> will stop working
+          </div>
+        )}
+
+        {subToast && (
+          <div className="px-3 py-2 rounded-xl text-xs font-bold"
+            style={{
+              background: subToast.type === 'success' ? 'rgba(52,211,153,0.08)' : 'rgba(248,113,113,0.08)',
+              color:      subToast.type === 'success' ? '#34d399' : '#f87171',
+              border:     `1px solid ${subToast.type === 'success' ? 'rgba(52,211,153,0.2)' : 'rgba(248,113,113,0.2)'}`,
+            }}>
+            {subToast.msg}
+          </div>
+        )}
+
+        <button onClick={saveSubdomain}
+          disabled={!subChanged || !subValid || subSaving}
+          className="px-5 py-2 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
+          style={{ background: 'rgba(0,229,255,0.1)', color: '#00e5ff', border: '1px solid rgba(0,229,255,0.2)' }}>
+          {subSaving ? 'Saving...' : 'Save Subdomain'}
+        </button>
       </div>
 
-      {/* ── Change Subdomain ── */}
-      <div className="rounded-2xl overflow-hidden"
-        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="px-6 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          <h2 className="font-syne font-bold text-white text-[15px]">Change Subdomain</h2>
-          <p className="text-xs mt-0.5" style={{ color: '#4b5563' }}>
-            Update your free <span style={{ color: '#6b7280' }}>.deployhub.online</span> subdomain
-          </p>
+      {/* ── Custom Domain ────────────────────────────────── */}
+      <div className="rounded-2xl p-5 space-y-4"
+        style={{
+          background: 'rgba(255,255,255,0.02)',
+          border: `1px solid ${isPro ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.04)'}`,
+          opacity: isPro ? 1 : 0.7,
+        }}>
+
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-bold text-white">Custom Domain</p>
+            <p className="text-xs mt-0.5" style={{ color: '#374151' }}>Attach your own domain</p>
+          </div>
+          {isPro ? <Badge color="#a78bfa">Pro</Badge> : <Badge color="#6b7280">Pro Only</Badge>}
         </div>
-        <div className="p-6 space-y-4">
-          {loading ? (
-            <div className="space-y-3"><Skeleton h="h-11" /><Skeleton w="w-32" h="h-9" /></div>
-          ) : (
-            <>
-              {/* Input with suffix */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-white">Subdomain</label>
-                <div className="flex items-stretch rounded-xl overflow-hidden"
-                  style={{ border: '1px solid ' + (subError ? 'rgba(248,113,113,0.4)' : subdomain !== project?.subdomain ? 'rgba(0,229,255,0.4)' : 'rgba(255,255,255,0.08)') }}>
-                  <input
-                    value={subdomain}
-                    onChange={e => handleSubdomainChange(e.target.value)}
-                    placeholder="my-project"
-                    className="flex-1 px-4 py-2.5 text-sm font-mono outline-none bg-transparent"
-                    style={{ color: '#e5e7eb', background: 'rgba(255,255,255,0.02)' }}
-                  />
-                  <div className="flex items-center px-3 text-sm font-mono flex-shrink-0"
-                    style={{ background: 'rgba(255,255,255,0.03)', color: '#374151', borderLeft: '1px solid rgba(255,255,255,0.06)' }}>
-                    .deployhub.online
-                  </div>
+
+        {!isPro ? (
+          <div className="px-4 py-3 rounded-xl text-sm"
+            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', color: '#4b5563' }}>
+            Upgrade to Pro to attach a custom domain.
+          </div>
+        ) : data?.customDomain ? (
+          /* Domain already attached */
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-4 py-3 rounded-xl"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-mono font-bold text-white">{data.customDomain}</span>
+                  <StatusBadge status={data.customDomainStatus} />
                 </div>
-                {subError && (
-                  <p className="text-[11px]" style={{ color: '#f87171' }}>{subError}</p>
-                )}
-                {!subError && subdomain && subdomain !== project?.subdomain && (
-                  <p className="text-[11px]" style={{ color: '#00e5ff' }}>
-                    Preview: {subdomain}.deployhub.online
+                {data.ssl?.expiresAt && (
+                  <p className="text-[11px]" style={{ color: '#374151' }}>
+                    SSL expires: {new Date(data.ssl.expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {' · '}Auto-renews {new Date(data.ssl.nextRenewAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                   </p>
                 )}
               </div>
-
-              {/* Warning */}
-              <div className="px-3 py-2.5 rounded-xl flex items-start gap-2 text-xs"
-                style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', color: '#d97706' }}>
-                <span className="flex-shrink-0 mt-0.5">⚠</span>
-                <span>Changing your subdomain will immediately break existing links. Your old subdomain will not be reserved.</span>
-              </div>
-
-              <div className="flex justify-end">
-                <button onClick={saveSubdomain}
-                  disabled={subSaving || !!subError || subdomain === project?.subdomain}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all hover:scale-105 disabled:opacity-40 disabled:hover:scale-100"
-                  style={{ background: 'linear-gradient(135deg,#00e5ff,#00b8cc)', color: '#000' }}>
-                  {subSaving && <div className="w-3.5 h-3.5 rounded-full border-2 border-black border-t-transparent animate-spin" />}
-                  Save Subdomain
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* ── Custom Domain (Pro — Coming Soon) ── */}
-      <div className="rounded-2xl overflow-hidden relative"
-        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', opacity: 0.7 }}>
-
-        {/* Coming soon overlay */}
-        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl backdrop-blur-[1px]"
-          style={{ background: 'rgba(5,8,16,0.6)' }}>
-          <div className="text-center px-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold mb-2"
-              style={{ background: 'rgba(0,229,255,0.08)', border: '1px solid rgba(0,229,255,0.2)', color: '#00e5ff' }}>
-              🚧 Coming Soon
+              <button onClick={removeDomain}
+                className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
+                style={{ background: 'rgba(248,113,113,0.08)', color: '#f87171', border: '1px solid rgba(248,113,113,0.2)' }}>
+                Remove
+              </button>
             </div>
-            <p className="text-sm text-white font-bold">Custom Domain Support</p>
-            <p className="text-xs mt-1" style={{ color: '#4b5563' }}>Infrastructure in progress — available soon for Pro users</p>
-          </div>
-        </div>
 
-        <div className="px-6 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          <div className="flex items-center gap-2">
-            <h2 className="font-syne font-bold text-white text-[15px]">Custom Domain</h2>
-            <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded-md"
-              style={{ background: 'rgba(0,229,255,0.08)', color: '#00e5ff', border: '1px solid rgba(0,229,255,0.15)' }}>
-              Pro
-            </span>
-          </div>
-          <p className="text-xs mt-0.5" style={{ color: '#4b5563' }}>Point your own domain to this project</p>
-        </div>
+            {data.customDomainStatus === 'provisioning' && (
+              <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm"
+                style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.2)', color: '#f59e0b' }}>
+                <div className="w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent animate-spin flex-shrink-0" />
+                Issuing SSL certificate... this may take 1-2 minutes
+              </div>
+            )}
 
-        <div className="p-6 space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-white">Your Domain</label>
-            <input disabled placeholder="yourdomain.com"
-              className="w-full px-3.5 py-2.5 rounded-xl text-sm font-mono outline-none"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: '#374151' }} />
+            {data.customDomainStatus === 'failed' && (
+              <div className="px-4 py-3 rounded-xl text-sm"
+                style={{ background: 'rgba(248,113,113,0.07)', border: '1px solid rgba(248,113,113,0.2)', color: '#f87171' }}>
+                Provisioning failed. Make sure your A record points to <span className="font-mono">{process.env.SERVER_IP || 'server IP'}</span> and try again.
+              </div>
+            )}
           </div>
+        ) : (
+          /* Add new domain */
+          <div className="space-y-4">
 
-          {/* DNS instructions preview */}
-          <div className="rounded-xl overflow-hidden"
-            style={{ border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div className="px-4 py-2.5 text-[10px] font-bold tracking-widest uppercase"
-              style={{ background: 'rgba(255,255,255,0.02)', color: '#374151', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-              DNS Records to add
-            </div>
-            <div className="p-4 space-y-2">
-              {[
-                { type: 'A',     name: '@',   value: '123.123.123.123' },
-                { type: 'CNAME', name: 'www', value: 'yourdomain.deployhub.online' },
-              ].map(r => (
-                <div key={r.type} className="grid grid-cols-3 gap-2 text-[11px] font-mono"
-                  style={{ color: '#374151' }}>
-                  <span className="px-2 py-1 rounded-md text-center"
-                    style={{ background: 'rgba(255,255,255,0.03)', color: '#6b7280' }}>{r.type}</span>
-                  <span className="px-2 py-1 rounded-md" style={{ background: 'rgba(255,255,255,0.02)' }}>{r.name}</span>
-                  <span className="px-2 py-1 rounded-md truncate" style={{ background: 'rgba(255,255,255,0.02)' }}>{r.value}</span>
+            {/* Instructions */}
+            <div className="px-4 py-3 rounded-xl space-y-2 text-xs"
+              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <p className="font-bold text-white">Before adding your domain:</p>
+              <div className="space-y-1.5" style={{ color: '#4b5563' }}>
+                <p>1. Go to your DNS provider</p>
+                <p>2. Add an <span className="font-mono text-white">A record</span>:</p>
+                <div className="font-mono px-3 py-2 rounded-lg mt-1 space-y-1"
+                  style={{ background: 'rgba(0,229,255,0.04)', border: '1px solid rgba(0,229,255,0.1)' }}>
+                  <p><span style={{ color: '#374151' }}>Type:</span>  <span className="text-white">A</span></p>
+                  <p><span style={{ color: '#374151' }}>Name:</span>  <span className="text-white">@ (or your subdomain)</span></p>
+                  <p><span style={{ color: '#374151' }}>Value:</span> <span style={{ color: '#00e5ff' }}>{process.env.VITE_SERVER_IP || 'YOUR_SERVER_IP'}</span></p>
                 </div>
-              ))}
+                <p className="mt-1">3. Click "Check DNS" below</p>
+              </div>
             </div>
-          </div>
 
-          <button disabled
-            className="w-full py-2.5 rounded-xl font-bold text-sm opacity-30 cursor-not-allowed"
-            style={{ background: 'linear-gradient(135deg,#00e5ff,#00b8cc)', color: '#000' }}>
-            Add Custom Domain
-          </button>
-        </div>
+            {/* Input + check */}
+            <div className="flex gap-2">
+              <input
+                value={customInput}
+                onChange={e => { setCustomInput(e.target.value); setCheckResult(null) }}
+                placeholder="myapp.com"
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm outline-none font-mono"
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#fff' }}
+                onFocus={e => e.target.style.borderColor = 'rgba(0,229,255,0.3)'}
+                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'}
+                onKeyDown={e => e.key === 'Enter' && checkDNS()}
+              />
+              <button onClick={checkDNS} disabled={!customInput.trim() || checking}
+                className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40 flex-shrink-0"
+                style={{ background: 'rgba(255,255,255,0.05)', color: '#9ca3af', border: '1px solid rgba(255,255,255,0.1)' }}>
+                {checking ? (
+                  <div className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                ) : 'Check DNS'}
+              </button>
+            </div>
+
+            {/* DNS result */}
+            {checkResult && (
+              <div className="px-4 py-3 rounded-xl text-sm space-y-2"
+                style={{
+                  background: checkResult.pointing ? 'rgba(52,211,153,0.07)' : 'rgba(248,113,113,0.07)',
+                  border: `1px solid ${checkResult.pointing ? 'rgba(52,211,153,0.2)' : 'rgba(248,113,113,0.2)'}`,
+                  color: checkResult.pointing ? '#34d399' : '#f87171',
+                }}>
+                <p className="font-bold">{checkResult.pointing ? '✓ DNS verified' : '✗ DNS not configured'}</p>
+                <p className="text-xs opacity-80">{checkResult.message}</p>
+              </div>
+            )}
+
+            {/* Add button — only show when DNS verified */}
+            {checkResult?.pointing && (
+              <button onClick={addDomain} disabled={adding}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm text-black transition-all disabled:opacity-60"
+                style={{ background: 'linear-gradient(135deg, #00e5ff, #00b8cc)' }}>
+                {adding ? (
+                  <><div className="w-4 h-4 rounded-full border-2 border-black/30 border-t-black animate-spin" /> Provisioning...</>
+                ) : `Add ${customInput} & Issue SSL`}
+              </button>
+            )}
+          </div>
+        )}
+
+        {customToast && (
+          <div className="px-3 py-2 rounded-xl text-xs font-bold"
+            style={{
+              background: customToast.type === 'success' ? 'rgba(52,211,153,0.08)' : customToast.type === 'info' ? 'rgba(96,165,250,0.08)' : 'rgba(248,113,113,0.08)',
+              color:      customToast.type === 'success' ? '#34d399' : customToast.type === 'info' ? '#60a5fa' : '#f87171',
+              border:     `1px solid ${customToast.type === 'success' ? 'rgba(52,211,153,0.2)' : customToast.type === 'info' ? 'rgba(96,165,250,0.2)' : 'rgba(248,113,113,0.2)'}`,
+            }}>
+            {customToast.msg}
+          </div>
+        )}
       </div>
 
-      <Toast msg={toast.msg} type={toast.type} onClose={() => setToast({ msg: '' })} />
     </div>
   )
 }

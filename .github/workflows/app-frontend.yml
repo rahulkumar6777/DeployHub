@@ -26,6 +26,7 @@ jobs:
               run: |
                 docker build \
                   --build-arg VITE_RAZORPAY_KEY_ID="${{ secrets.VITE_RAZORPAY_KEY_ID }}" \
+                  --build-arg VITE_SERVER_IP="${{ secrets.VITE_SERVER_IP }}" \
                   -t ${{ secrets.DOCKER_USERNAME }}/deployhub-app-frontend:latest ./prototype/app-frontend
 
 

@@ -79,6 +79,9 @@ const projectSchema = new mongoose.Schema({
     subdomain: {
         type: String
     },
+    customDomainStatus: {
+        type: String
+    },
     totalRequest: {
         type: Number,
         default: 0
