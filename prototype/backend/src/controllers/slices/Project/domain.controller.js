@@ -2,6 +2,7 @@ import { redisclient } from '../../../configs/redis.js'
 import { Model } from '../../../models/index.js'
 import { SslCertificate } from '../../../models/slices/sslCertificate.js'
 import { isBlockedDomain } from '../../../utils/blockedDomains.js'
+import docker from '../../../utils/docker.js'
 import {
     isDomainPointingToServer,
     generateCertificate,
@@ -52,10 +53,41 @@ export const updateSubdomain = async (req, res) => {
         })
         if (conflict) return res.status(409).json({ success: false, message: 'Subdomain already taken' })
 
-        await Model.Project.findOneAndUpdate(
+        const oldProject = await Model.Project.findOneAndUpdate(
             { _id: req.params.id, owner: req.user._id },
-            { $set: { subdomain, status: 'building' } }
+            { $set: { subdomain } },
+            { new: false }
+        );
+
+        const allocation = await Model.Binding.findOneAndUpdate({
+            project: req.params.id
+        },
+            {
+                subdomain: subdomain
+            }
         )
+
+        await redisclient.del(`subdomain:${subdomain}`)
+
+        await redisclient.hset(`subdomain:${subdomain}`, {
+            port: allocation.port,
+            projectId: req.params._id.toString(),
+            plan: project.plan
+        })
+
+        const containers = await docker.listContainers({ all: true })
+        const existingcontainer = containers.find(c =>
+            c.Image.includes(`${oldProject.subdomain}`)
+        )
+
+        if (existingcontainer) {
+            const container = docker.getContainer(existingcontainer.Id);
+            const inspect = await container.inspect();
+
+            if (inspect.State.Running) {
+                await container.rename({ name: subdomain });
+            }
+        }
 
         res.json({ success: true, subdomain })
     } catch (err) {
