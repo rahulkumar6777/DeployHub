@@ -1,6 +1,7 @@
 import { redisclient } from '../../../configs/redis.js'
 import { Model } from '../../../models/index.js'
 import { SslCertificate } from '../../../models/slices/sslCertificate.js'
+import { isBlockedDomain } from '../../../utils/blockedDomains.js'
 import {
     isDomainPointingToServer,
     generateCertificate,
@@ -68,6 +69,12 @@ export const checkCustomDomain = async (req, res) => {
         const { domain } = req.query
         if (!domain) return res.status(400).json({ success: false, message: 'Domain required' })
 
+        if (isBlockedDomain(domain)) {
+            return res.status(403).json({
+                success: false,
+                message: 'This domain is reserved and cannot be used'
+            })
+        }
 
         if (!/^[a-zA-Z0-9][a-zA-Z0-9-_.]+\.[a-zA-Z]{2,}$/.test(domain)) {
             return res.status(400).json({ success: false, message: 'Invalid domain format' })
@@ -102,6 +109,13 @@ export const addCustomDomain = async (req, res) => {
     try {
         const { domain } = req.body
         if (!domain) return res.status(400).json({ success: false, message: 'Domain required' })
+
+        if (isBlockedDomain(domain)) {
+            return res.status(403).json({
+                success: false,
+                message: 'This domain is reserved and cannot be used'
+            })
+        }
 
         const project = await Model.Project.findOne({ _id: req.params.id, owner: req.user._id })
         if (!project) return res.status(404).json({ success: false, message: 'Project not found' })
