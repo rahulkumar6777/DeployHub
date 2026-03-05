@@ -53,7 +53,7 @@ const buildWorker = new Worker(
       }
 
       // build filepath
-      buildFilePath = path.resolve(baserepopath, buildData._id.toString());
+      const buildFilePath = path.resolve(baserepopath, buildData._id.toString());
 
       // check build se bahar na jaye user
       if (!buildFilePath.startsWith(baserepopath)) {
