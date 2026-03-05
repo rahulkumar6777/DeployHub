@@ -21,6 +21,7 @@ export async function isDomainPointingToServer(domain) {
 
 
 export async function generateCertificate(domain, projectId, email = process.env.CERTBOT_EMAIL || 'rahulk48546@gmail.com') {
+    console.log("req for generate certificate")
   const isValid = await isDomainPointingToServer(domain)
   if (!isValid) throw new Error(`Domain ${domain} is not pointing to this server (${SERVER_IP})`)
 
@@ -54,6 +55,7 @@ export async function generateCertificate(domain, projectId, email = process.env
 
     await container.start()
     const result = await container.wait()
+    console.log(result)
     if (result.StatusCode !== 0) throw new Error(`Certbot failed with exit code ${result.StatusCode}`)
     console.log(`[ssl] Certificate issued for ${domain}`)
   }
