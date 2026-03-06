@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to DeployHub</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            animation: slideIn 0.8s ease-out;
+        }
+        .header {
+            background: linear-gradient(135deg, #2a9d8f 0%, #264653 100%);
+            color: #ffffff;
+            text-align: center;
+            padding: 30px 20px;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: 0.5px;
+        }
+        .content {
+            padding: 30px;
+            font-size: 16px;
+            color: #444;
+        }
+        .content p {
+            margin-bottom: 15px;
+        }
+        .content strong {
+            color: #2a9d8f;
+        }
+        .content a.button {
+            display: inline-block;
+            background-color: #2a9d8f;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .content a.button:hover {
+            background-color: #264653;
+            transform: translateY(-2px);
+        }
+        .footer {
+            background-color: #f8f9fa;
+            text-align: center;
+            padding: 15px;
+            font-size: 14px;
+            color: #6b7280;
+            border-top: 1px solid #e5e7eb;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @media screen and (max-width: 600px) {
+            .container {
+                margin: 20px;
+                border-radius: 8px;
+            }
+            .header {
+                padding: 20px;
+            }
+            .header h1 {
+                font-size: 24px;
+            }
+            .content {
+                padding: 20px;
+                font-size: 15px;
+            }
+            .content a.button {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Welcome to DeployHub!</h1>
+        </div>
+        <div class="content">
+            <p>Hi <strong>{{fullname}}</strong>,</p>
+            <p>We are thrilled to have you on board! DeployHub is your one-stop solution for a Web_Hosting service.</p>
+            <p>Your registered email is: <strong>{{email}}</strong></p>
+            <p>Start exploring our services and take your projects to the next level:</p>
+            <p><a href="https://dashboard.deployhub.cloud" target="_blank" class="button">Visit DeployHub</a></p>
+            <p>We are here to support you every step of the way. If you have any questions, feel free to reach out to us.</p>
+            <p>Happy coding!</p>
+        </div>
+        <div class="footer">
+            © 2026 DeployHub. All rights reserved.
+        </div>
+    </div>
+</body>
+</html>

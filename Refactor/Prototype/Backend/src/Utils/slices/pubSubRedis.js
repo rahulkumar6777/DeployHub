@@ -1,6 +1,6 @@
 import { Redis } from "ioredis";
 
-class RedisConfig {
+class RedisConfigForPubSub {
     constructor() {
         this.publisher = new Redis({
             host: process.env.REDIS_HOST || 'localhost',
@@ -36,4 +36,4 @@ class RedisConfig {
 
 
 
-export default RedisConfig
+export default RedisConfigForPubSub
