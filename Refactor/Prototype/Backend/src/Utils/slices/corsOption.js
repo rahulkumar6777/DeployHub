@@ -1,3 +1,5 @@
+import { ENV } from "../../lib/env.js";
+
 const corsLocally = {
     origin: ['http://localhost:5173'],
     methods: ['POST' , 'GET' , 'PUT' , 'DELETE' , 'OPTIONS' , 'PATCH'],
@@ -12,4 +14,4 @@ const corsProdution = {
     allowedHeaders: ['Content-Type', 'Authorization']
 }
 
-export const corsOption  = process.env.NODE_ENV === 'production' ? corsProdution : corsLocally;
+export const corsOption  = ENV.NODE_ENV === 'production' ? corsProdution : corsLocally;

@@ -1,14 +1,15 @@
 import { Redis } from "ioredis";
+import { ENV } from "../../lib/env.js";
 
 class RedisConfigForPubSub {
     constructor() {
         this.publisher = new Redis({
-            host: process.env.REDIS_HOST || 'localhost',
-            port: process.env.REDIS_PORT || 6379,
+            host: ENV.REDIS_HOST || 'localhost',
+            port: ENV.REDIS_PORT || 6379,
         })
         this.subscriber = new Redis({
-            host: process.env.REDIS_HOST || 'localhost',
-            port: process.env.REDIS_PORT || 6379,
+            host: ENV.REDIS_HOST || 'localhost',
+            port: ENV.REDIS_PORT || 6379,
         })
 
         process.on("SIGINT", async () => {

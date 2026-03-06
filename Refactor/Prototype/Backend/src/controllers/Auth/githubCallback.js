@@ -1,6 +1,7 @@
 import axios from "axios";
 import { Model } from "../../models/index.js";
 import { Utils } from "../../Utils/index.js";
+import { ENV } from "../../lib/env.js";
 
 
 export const githubCallback = async (req, res) => {
@@ -13,8 +14,8 @@ export const githubCallback = async (req, res) => {
 
         const tokenRes = await axios.post("https://github.com/login/oauth/access_token",
             {
-                client_id: process.env.GITHUB_CLIENT_ID,
-                client_secret: process.env.GITHUB_CLIENT_SECRET,
+                client_id: ENV.GITHUB_CLIENT_ID,
+                client_secret: ENV.GITHUB_CLIENT_SECRET,
                 code,
             },
             { headers: { Accept: "application/json" } }

@@ -1,7 +1,8 @@
 import { Redis } from "ioredis"
+import { ENV } from '../../lib/env.js'
 
 export const connection = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: process.env.REDIS_PORT || 6379,
+  host: ENV.REDIS_HOST || 'localhost',
+  port: ENV.REDIS_PORT || 6379,
   maxRetriesPerRequest: null,
 });

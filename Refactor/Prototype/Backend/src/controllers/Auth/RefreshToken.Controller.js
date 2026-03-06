@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken'
 import { Model } from '../../../models/index.js'
 import { Utils } from '../../Utils/index.js';
+import { ENV } from '../../lib/env.js';
 
 const RefreshToken = async (req, res) => {
     try {
@@ -14,7 +15,7 @@ const RefreshToken = async (req, res) => {
 
         const verifytoken = jwt.verify(
             refrestoken,
-            process.env.REFRESH_TOKEN_SECRET
+            ENV.REFRESH_TOKEN_SECRET
         )
 
         if (!verifytoken) {
