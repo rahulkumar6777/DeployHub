@@ -1,3 +1,5 @@
+import { ENV } from "../../lib/env.js";
+
 const LocalHostRefreshTokenOption = {
     httpOnly: true,
     secure: false, 
@@ -28,11 +30,11 @@ const DeploymentAccessTokenOption = {
     expires: new Date(Date.now() +  15 * 60 * 1000) 
 };
 
-const RefreshtokenOption = process.env.NODE_ENV === 'production'
+const RefreshtokenOption = ENV.NODE_ENV === 'production'
     ? DeploymentRefreshTokenOption
     : LocalHostRefreshTokenOption;
 
-const AccesstokenOption = process.env.NODE_ENV === 'production'
+const AccesstokenOption = ENV.NODE_ENV === 'production'
     ? DeploymentAccessTokenOption
     : LocalHostAccessTokenOption;
 

@@ -11,7 +11,18 @@ const userVerificationPaymentSchema = new mongoose.Schema({
     },
     oderid: {
         type: String
+    },
+    paymentId: {
+        type: String
+    },
+    verifiedAt: {
+        type : Date
     }
 }, { timestamps: true })
+
+userVerificationPaymentSchema.index(
+    { userId: 1, status: 1 },
+    { unique: true, partialFilterExpression: { status: "pending" } }
+);
 
 export const UserVerificationPayment = mongoose.model("VerifyuserPayment", userVerificationPaymentSchema)

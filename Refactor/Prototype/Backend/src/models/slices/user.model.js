@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcrypt'
+import { ENV } from "../../lib/env.js";
 
 const userschema = new mongoose.Schema({
     fullname: {
@@ -27,6 +28,8 @@ const userschema = new mongoose.Schema({
         enum: ["local", "github"],
         default: "local"
     },
+    githubId: String,
+    githubUsername: String,
     profilePic: {
         type: String,
         default: ""
@@ -65,21 +68,6 @@ userschema.methods.checkpassword = async function (oldpassword) {
 };
 
 
-// generate socketToken for validate socket connection
-userschema.methods.generateSocketToken = async function (params) {
-    return jwt.sign(
-        {
-            _id: this._id,
-            verified: this.verified
-        },
-        process.env.SOCKET_TOKEN_SECRET,
-        {
-            expiresIn: process.env.SOCKET_TOKEN_EXPIRY
-        }
-    )
-}
-
-
 // make accesstoken
 userschema.methods.generateAccessToken = async function () {
     return jwt.sign(
@@ -87,22 +75,22 @@ userschema.methods.generateAccessToken = async function () {
             _id: this._id,
             verified: this.verified
         },
-        process.env.ACCESS_TOKEN_SECRET,
+        ENV.ACCESS_TOKEN_SECRET,
         {
-            expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
+            expiresIn: ENV.ACCESS_TOKEN_EXPIRY,
         }
     );
 };
 
 
-userschema.methods.generateRefreshToken = async function (userAgent, ip) {
+userschema.methods.generateRefreshToken = async function () {
     return jwt.sign(
         {
             _id: this._id
         },
-        process.env.REFRESH_TOKEN_SECRET,
+        ENV.REFRESH_TOKEN_SECRET,
         {
-            expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
+            expiresIn: ENV.REFRESH_TOKEN_EXPIRY,
         }
     );
 };

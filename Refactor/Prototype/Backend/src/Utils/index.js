@@ -1,6 +1,6 @@
 import { connection } from "./slices/connection.js";
 import { AccesstokenOption, RefreshtokenOption } from "./slices/cookieOption.js";
-import { corsOption } from "./slices/corsOption";
+import { corsOption } from "./slices/corsOption.js";
 import { deleteFromDevload } from "./slices/devloadDelete.js";
 import { uploadToDevload } from "./slices/devloadUpload.js";
 import docker from "./slices/docker.js";
@@ -9,6 +9,7 @@ import { GenerateAccessTokenAndRefreshToken } from "./slices/GenerateAccessToken
 import { mailTempletHtmlPath } from "./slices/mailTempletPath.js";
 import RedisConfigForPubSub from "./slices/pubSubRedis.js";
 import { welcomeMessageQueue } from "./slices/queues.js";
+import { razorpay } from "./slices/razorPay.js";
 
 export const Utils = {
     Auth: {
@@ -34,5 +35,8 @@ export const Utils = {
     },
     Security: {
         corsOption
+    },
+    Payment: {
+        razorpay
     }
 };
