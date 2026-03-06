@@ -1,6 +1,6 @@
 import { connection } from "./slices/connection.js";
 import { AccesstokenOption, RefreshtokenOption } from "./slices/cookieOption.js";
-import { corsOption } from "./slices/corsOption";
+import { corsOption } from "./slices/corsOption.js";
 import { deleteFromDevload } from "./slices/devloadDelete.js";
 import { uploadToDevload } from "./slices/devloadUpload.js";
 import docker from "./slices/docker.js";

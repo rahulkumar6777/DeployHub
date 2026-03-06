@@ -4,9 +4,7 @@ export const connectDB = async () => {
     const uri = process.env.NODE_ENV === 'production' ? process.env.PRODUCTIONDB_URI : process.env.DEVELOPMENTDB_URI;
     try {
         await mongoose.connect(uri, {
-            authSource: 'admin',
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
+            authSource: 'admin'
         });
         console.log(`Database connected: ${mongoose.connection.host}`);
     } catch (error) {
