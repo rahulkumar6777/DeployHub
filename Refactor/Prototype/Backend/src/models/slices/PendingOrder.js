@@ -28,6 +28,9 @@ const pendingorderschema = new mongoose.Schema({
         type: Date,
         expires: 7200,
         default: Date.now
+    },
+    projectId: {
+        type: String
     }
 })
 

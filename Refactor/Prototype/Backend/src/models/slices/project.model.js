@@ -19,9 +19,11 @@ const projectSchema = new mongoose.Schema({
         enum: ['static', 'node'],
         default: 'static'
     },
-    repoLink: {
-        type: String,
-        required: true
+    repoOwnerName:{
+        type: String
+    },
+    repoName: {
+        type: String
     },
     buildCommand: String,
     publishDir: String,
