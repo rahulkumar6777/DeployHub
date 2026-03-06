@@ -1,11 +1,12 @@
-import { githubCallback } from "./Auth/githubCallback";
-import { githubLogin } from "./Auth/githubLogin";
-import { initRegistration } from "./Auth/initRegister.controller";
-import { Login } from "./Auth/Login.controller";
-import { Logout } from "./Auth/Logout.Controller";
-import { RefreshToken } from "./Auth/RefreshToken.Controller";
-import { verifyRegister } from "./Auth/verifyRegister.controller";
-import { me } from "./User/me.controller";
+import { githubCallback } from "./Auth/githubCallback.js";
+import { githubLogin } from "./Auth/githubLogin.js";
+import { initRegistration } from "./Auth/initRegister.controller.js";
+import { Login } from "./Auth/Login.controller.js";
+import { Logout } from "./Auth/Logout.Controller.js";
+import { RefreshToken } from "./Auth/RefreshToken.Controller.js";
+import { verifyRegister } from "./Auth/verifyRegister.controller.js";
+import { initVerify, verify } from "./Payment/verifyUser.js";
+import { me } from "./User/me.controller.js";
 
 export const controller = {
     Auth: {
@@ -25,5 +26,11 @@ export const controller = {
     },
     User: {
         me: me
+    },
+    Payment: {
+        userverify: {
+            init: initVerify,
+            verify
+        }
     }
 }

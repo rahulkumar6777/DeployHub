@@ -12,7 +12,7 @@ const initVerify = async (req, res) => {
         // in paisa
         const basePrice = 9900
 
-        const order = Utils.Payment.razorpay.orders.create({
+        const order = await Utils.Payment.razorpay.orders.create({
             amount: basePrice,
             customer_details: {
                 email: user.email,
@@ -32,6 +32,7 @@ const initVerify = async (req, res) => {
         res.status(200).json(order);
 
     } catch (error) {
+        console.log(error)
         return res.status(500).json({
             error: "Internal Server Error"
         })
@@ -66,7 +67,7 @@ const verify = async (req, res) => {
 
 
 
-                const orderfromdb = await Model.VerifyuserPayment.findOne({ userId: user._id, oderid: razorpay_order_id });
+                const orderfromdb = await Model.UserVerificationPayment.findOne({ userId: user._id, oderid: razorpay_order_id });
                 if (!orderfromdb) {
                     return res.status(400).json({
                         message: "something went wrong! PLease Contact your team"
@@ -80,6 +81,8 @@ const verify = async (req, res) => {
                 }
 
                 orderfromdb.status = 'completed';
+                orderfromdb.paymentId = razorpay_payment_id
+                orderfromdb.verifiedAt = new Date()
                 await orderfromdb.save({ validateBeforeSave: false });
 
                 req.user.verified = true
@@ -87,6 +90,18 @@ const verify = async (req, res) => {
 
                 await req.user.save({ validateBeforeSave: false })
 
+                const redisKey = `deployhub:user:${user._id}`;
+
+                // get cached user
+                const cached = await redisclient.get(redisKey);
+                if (cached) {
+                    const userData = JSON.parse(cached);
+                    userData.verified = true;
+
+                    // save back
+                    await redisclient.set(redisKey, JSON.stringify(userData));
+                    await redisclient.expire(redisKey, 3600);
+                }
                 return res.status(200).json({
                     success: true,
                     verifed: true

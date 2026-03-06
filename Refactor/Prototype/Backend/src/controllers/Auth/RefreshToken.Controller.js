@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken'
-import { Model } from '../../../models/index.js'
+import { Model } from '../../models/index.js'
 import { Utils } from '../../Utils/index.js';
 import { ENV } from '../../lib/env.js';
 
