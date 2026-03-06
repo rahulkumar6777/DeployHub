@@ -27,6 +27,8 @@ const userschema = new mongoose.Schema({
         enum: ["local", "github"],
         default: "local"
     },
+    githubId: String,
+    githubUsername: String,
     profilePic: {
         type: String,
         default: ""
