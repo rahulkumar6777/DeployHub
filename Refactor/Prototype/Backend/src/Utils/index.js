@@ -9,6 +9,7 @@ import { GenerateAccessTokenAndRefreshToken } from "./slices/GenerateAccessToken
 import { mailTempletHtmlPath } from "./slices/mailTempletPath.js";
 import RedisConfigForPubSub from "./slices/pubSubRedis.js";
 import { welcomeMessageQueue } from "./slices/queues.js";
+import { razorpay } from "./slices/razorPay.js";
 
 export const Utils = {
     Auth: {
@@ -34,5 +35,8 @@ export const Utils = {
     },
     Security: {
         corsOption
+    },
+    Payment: {
+        razorpay
     }
 };
