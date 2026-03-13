@@ -13,7 +13,7 @@ const PLANS = [
     badge:     null,
     features: [
       { label: 'Per project pricing',          ok: true  },
-      { label: '2,000 Requests / mo',          ok: true  },
+      { label: '2,000 Requests / Day',          ok: true  },
       { label: 'Static Website Hosting',       ok: true  },
       { label: 'Node.js Hosting',              ok: true  },
       { label: '512 MB RAM per project',       ok: true  },
@@ -35,7 +35,7 @@ const PLANS = [
     badge:     'Most Popular',
     features: [
       { label: 'Per project pricing',          ok: true  },
-      { label: '1,00,000 Requests / mo',       ok: true  },
+      { label: '1,00,000 Requests / Day',       ok: true  },
       { label: 'Static Website Hosting',       ok: true  },
       { label: 'Node.js Hosting',              ok: true  },
       { label: '2 GB RAM per project',         ok: true  },
