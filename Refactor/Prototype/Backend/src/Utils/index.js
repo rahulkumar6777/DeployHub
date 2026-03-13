@@ -9,6 +9,7 @@ import { GenerateAccessTokenAndRefreshToken } from "./slices/GenerateAccessToken
 import { mailTempletHtmlPath } from "./slices/mailTempletPath.js";
 import RedisConfigForPubSub from "./slices/pubSubRedis.js";
 import { welcomeMessageQueue } from "./slices/queues.js";
+import { rateLimit } from "./slices/rateLimit.js";
 import { razorpay } from "./slices/razorPay.js";
 
 export const Utils = {
@@ -27,7 +28,8 @@ export const Utils = {
         docker,
         RedisConfigForPubSub,
         bullMqConnection: connection,
-        queues: { welcomeMessageQueue }
+        queues: { welcomeMessageQueue },
+        rateLimit
     },
     Email: {
         transporter,

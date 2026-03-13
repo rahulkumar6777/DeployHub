@@ -17,14 +17,15 @@ router.post('/auth/logout', verifyJWT, controller.Auth.Logout);
 
 // user
 router.get('/user/me', controller.User.me);
-
-
-
-
-
 // userverification payment
 router.post('/me/verifyInit', verifyJWT, controller.Payment.userverify.init)
 router.post('/me/verify', verifyJWT, controller.Payment.userverify.verify)
+
+
+
+
+
+
 
 
 

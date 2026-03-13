@@ -14,7 +14,7 @@ export default function Footer() {
 
         {/* Logo */}
         <div className="font-syne font-black text-lg">
-          Nest<span className="text-[#00e5ff]">Host</span>
+          Deploy<span className="text-[#00e5ff]">Hub</span>
         </div>
 
         {/* Links */}
@@ -28,7 +28,7 @@ export default function Footer() {
 
         {/* Copyright */}
         <div className="text-xs text-gray-600">
-          © 2025 DeployHub · Built with <span className="text-[#00e5ff]">♥</span>
+          © 2026 DeployHub · Built with <span className="text-[#00e5ff]">♥</span>
         </div>
       </div>
     </footer>
