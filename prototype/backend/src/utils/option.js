@@ -8,8 +8,8 @@ const LocalHostRefreshTokenOption = {
 const DeploymentRefreshTokenOption = {
     httpOnly: true,
     secure: true,
-    sameSite: 'None',
-    domain: ".deployhub.cloud",
+    sameSite: 'Strict',
+    domain: "api.deployhub.cloud",
     expires: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000)
 };
 
@@ -23,8 +23,8 @@ const LocalHostAccessTokenOption = {
 const DeploymentAccessTokenOption = {
     httpOnly: true,
     secure: true,
-    sameSite: 'None',
-    domain: ".deployhub.cloud",
+    sameSite: 'Strict',
+    domain: "api.deployhub.cloud",
     expires: new Date(Date.now() + 6 * 60 * 60 * 1000) 
 };
 
