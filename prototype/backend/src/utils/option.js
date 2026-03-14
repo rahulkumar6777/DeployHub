@@ -9,7 +9,7 @@ const DeploymentRefreshTokenOption = {
     httpOnly: true,
     secure: true,
     sameSite: 'Strict',
-    domain: ".deployhub.cloud",
+    domain: "dashboard.deployhub.cloud",
     expires: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000)
 };
 
@@ -24,7 +24,7 @@ const DeploymentAccessTokenOption = {
     httpOnly: true,
     secure: true,
     sameSite: 'Strict',
-    domain: ".deployhub.cloud",
+    domain: "dashboard.deployhub.cloud",
     expires: new Date(Date.now() + 6 * 60 * 60 * 1000) 
 };
 
