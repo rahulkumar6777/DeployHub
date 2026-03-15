@@ -5,6 +5,7 @@ import { RefreshtokenOption } from '../../../utils/option.js';
 const RefreshToken = async (req, res) => {
     try {
         const refrestoken = req.cookies?.refreshToken;
+        console.log(req.cookies)
 
         if (!refrestoken) {
             return res.status(400).json({
@@ -39,10 +40,9 @@ const RefreshToken = async (req, res) => {
         const AccessToken = await user.generateAccessToken();
 
 
-        return res.cookie("RefreshToken", refrestoken, RefreshtokenOption)
-            .json({
-                accessToken: AccessToken
-            })
+        return res.status(200).json({
+            accessToken: AccessToken
+        })
 
     } catch (error) {
         console.log(error)
