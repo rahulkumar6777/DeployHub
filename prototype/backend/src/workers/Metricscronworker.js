@@ -11,13 +11,9 @@ cron.schedule('0 0 * * *', async () => {
       { _id: 1, totalRequest: 1 }
     ).lean()
 
-    console.log(projects)
-    if (!projects.length) {
-      console.log('[metrics cron] No projects found for', today);
-      return;
-    }
+    if (!projects.length) return
 
-
+    
     const ops = projects.map(p => ({
       updateOne: {
         filter: { projectId: p._id, date: today },
@@ -26,14 +22,11 @@ cron.schedule('0 0 * * *', async () => {
       }
     }))
 
-    const bulkWrite = await Model.DailyMetric.bulkWrite(ops)
-    console.log(bulkWrite)
+    await Model.DailyMetric.bulkWrite(ops)
     console.log(`[metrics cron] Snapshotted ${projects.length} projects for ${today}`)
   } catch (err) {
     console.error('[metrics cron] Failed:', err.message)
   }
-}, {
-  timezone: "Asia/Kolkata"
 })
 
 console.log('[metrics cron] Scheduled daily at midnight')
