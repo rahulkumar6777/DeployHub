@@ -1,39 +1,40 @@
-const LocalHostRefreshTokenOption = {
+const getDeploymentRefreshTokenOption = () => ({
     httpOnly: true,
-    secure: false, 
+    secure: true,
+    sameSite: 'Strict',
+    domain: "api.deployhub.cloud",
+    expires: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000)
+});
+
+const getLocalHostRefreshTokenOption = () => ({
+    httpOnly: true,
+    secure: false,
     sameSite: 'Lax',
     expires: new Date(Date.now() + 9 * 24 * 60 * 60 * 1000)
-};
+});
 
-const DeploymentRefreshTokenOption = {
+const getDeploymentAccessTokenOption = () => ({
     httpOnly: true,
     secure: true,
     sameSite: 'Strict',
-    domain: "dashboard.deployhub.cloud",
-    expires: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000)
-};
+    domain: "api.deployhub.cloud",
+    expires: new Date(Date.now() + 2 * 60 * 60 * 1000)
+});
 
-const LocalHostAccessTokenOption = {
+const getLocalHostAccessTokenOption = () => ({
     httpOnly: true,
-    secure: false, 
-    sameSite: 'Lax', 
-    expires: new Date(Date.now() + 10 * 60 * 60 * 1000) 
-};
+    secure: false,
+    sameSite: 'Lax',
+    expires: new Date(Date.now() + 10 * 60 * 60 * 1000)
+});
 
-const DeploymentAccessTokenOption = {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'Strict',
-    domain: "dashboard.deployhub.cloud",
-    expires: new Date(Date.now() + 6 * 60 * 60 * 1000) 
-};
 
-const RefreshtokenOption = process.env.NODE_ENV === 'production'
-    ? DeploymentRefreshTokenOption
-    : LocalHostRefreshTokenOption;
+export const RefreshtokenOption = () =>
+    process.env.NODE_ENV === 'production'
+        ? getDeploymentRefreshTokenOption()
+        : getLocalHostRefreshTokenOption();
 
-const AccesstokenOption = process.env.NODE_ENV === 'production'
-    ? DeploymentAccessTokenOption
-    : LocalHostAccessTokenOption;
-
-export { RefreshtokenOption, AccesstokenOption };
+export const AccesstokenOption = () =>
+    process.env.NODE_ENV === 'production'
+        ? getDeploymentAccessTokenOption()
+        : getLocalHostAccessTokenOption();
