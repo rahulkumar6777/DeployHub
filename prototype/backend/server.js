@@ -21,7 +21,9 @@ import './src/workers/Metricscronworker.js'
 import { ensureBucket } from './src/utils/minio.js'
 await ensureBucket()
 
-
+app.use("/health" , (req , res)=>{
+    res.send('healthy')
+})
 app.use('/api', Routes)
 
 const server = http.createServer(app)
