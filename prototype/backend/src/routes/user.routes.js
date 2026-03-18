@@ -3,6 +3,7 @@ import { contollers } from '../controllers/index.js';
 import { verifyJWT } from '../middlewares/Auth.js';
 import upload from '../middlewares/multer.middleware.js';
 import { addCustomDomain, checkCustomDomain, getCustomDomainStatus, getProjectDomains, removeCustomDomain, updateSubdomain } from '../controllers/slices/Project/domain.controller.js';
+import { countTotalProjects } from '../controllers/slices/Project/countTotalProjects.controller.js';
 
 const router = express.Router();
 
@@ -58,5 +59,8 @@ router.post('/projects/:id/domains/custom', verifyJWT, addCustomDomain)
 router.get('/projects/:id/domains/custom/status', verifyJWT, getCustomDomainStatus)
 router.delete('/projects/:id/domains/custom', verifyJWT, removeCustomDomain)
 
+
+// total project
+router.get('/project/total' , countTotalProjects)
 
 export default router;
