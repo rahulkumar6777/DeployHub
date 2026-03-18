@@ -39,8 +39,4 @@ app.use(helmet());
 
 import cookieParser from "cookie-parser";
 app.use(cookieParser());
-
-app.use('/' , (req , res)=> {
-    res.send("service Online")
-})
 export default app;
