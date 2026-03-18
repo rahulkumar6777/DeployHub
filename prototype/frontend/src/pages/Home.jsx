@@ -17,15 +17,37 @@ export default function Home() {
   useReveal()
 
   const [count, setCount] = useState(0)
+
   useEffect(() => {
-    const target = 6, step = Math.ceil(target / 1)
-    let cur = 0
-    const t = setInterval(() => {
-      cur += step
-      if (cur >= target) { setCount(target); clearInterval(t) }
-      else setCount(cur)
-    }, 30)
-    return () => clearInterval(t)
+    // Fetch the real project total from the API
+    fetch('https://api.deployhub.cloud/api/project/total')
+      .then(res => res.json())
+      .then(data => {
+        // API returns a number directly
+        const target = typeof data === 'number' ? data : (data.total ?? 0)
+        // Animate counter from 0 to target
+        const duration = 1200 // ms
+        const steps = 40
+        const stepTime = duration / steps
+        const increment = target / steps
+        let cur = 0
+        let step = 0
+        const t = setInterval(() => {
+          step++
+          cur = Math.round(increment * step)
+          if (step >= steps) {
+            setCount(target)
+            clearInterval(t)
+          } else {
+            setCount(cur)
+          }
+        }, stepTime)
+        return () => clearInterval(t)
+      })
+      .catch(() => {
+        // Fallback: static value if API is unreachable
+        setCount(0)
+      })
   }, [])
 
   const glowRef = useRef(null)
@@ -477,9 +499,9 @@ export default function Home() {
               {/* Stats */}
               <div className="stats-grid">
                 {[
-                  { num: `${count.toLocaleString()}+`, label: 'Projects Deployed' },
-                  { num: '99.9%',                      label: 'Uptime SLA' },
-                  { num: '<1s',                         label: 'Deploy Time' },
+                  { num: count > 0 ? `${count.toLocaleString()}+` : '…', label: 'Projects Deployed' },
+                  { num: '99.9%',                                         label: 'Uptime SLA' },
+                  { num: '<1s',                                            label: 'Deploy Time' },
                 ].map(s => (
                   <div key={s.label} className="stat-item">
                     <div className="stat-num">{s.num}</div>
