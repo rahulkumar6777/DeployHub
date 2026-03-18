@@ -5,13 +5,12 @@ export const countTotalProjects = async (req, res) => {
     try {
 
 
-        const cacheTotalProjects = await redisclient.get('deployhub:totalProjects')
+        const cacheTotalProjects = await redisclient.get('deployhub:totalProject')
         if (!cacheTotalProjects) {
 
             const totalProject = await Model.Project.countDocuments()
-            redisclient.sadd('deployhub:totalProjects', totalProject)
+            redisclient.set('deployhub:totalProject', totalProject, "EX", 3600)
 
-            redisclient.expire('deployhub:totalProjects', 3600)
 
             return res.status(200).json({
                 total: totalProject
@@ -20,7 +19,7 @@ export const countTotalProjects = async (req, res) => {
         }
 
         return res.status(200).json({
-            total: cacheTotalProjects
+            total: parseInt(cacheTotalProjects, 10)
         })
 
 
