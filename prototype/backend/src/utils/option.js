@@ -1,7 +1,7 @@
 const getDeploymentRefreshTokenOption = () => ({
     httpOnly: true,
     secure: true,
-    sameSite: 'Strict',
+    sameSite: 'None',
     domain: "api.deployhub.cloud",
     expires: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000)
 });
@@ -16,7 +16,7 @@ const getLocalHostRefreshTokenOption = () => ({
 const getDeploymentAccessTokenOption = () => ({
     httpOnly: true,
     secure: true,
-    sameSite: 'Strict',
+    sameSite: 'None',
     domain: "api.deployhub.cloud",
     expires: new Date(Date.now() + 2 * 60 * 60 * 1000)
 });
