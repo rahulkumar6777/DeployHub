@@ -3,14 +3,14 @@ const getDeploymentRefreshTokenOption = () => ({
     secure: true,
     sameSite: 'Strict',
     domain: "api.deployhub.cloud",
-    expires: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000)
+    maxAge: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000)
 });
 
 const getLocalHostRefreshTokenOption = () => ({
     httpOnly: true,
     secure: false,
     sameSite: 'Lax',
-    expires: new Date(Date.now() + 9 * 24 * 60 * 60 * 1000)
+    maxAge: new Date(Date.now() + 9 * 24 * 60 * 60 * 1000)
 });
 
 const getDeploymentAccessTokenOption = () => ({
@@ -18,14 +18,14 @@ const getDeploymentAccessTokenOption = () => ({
     secure: true,
     sameSite: 'Strict',
     domain: "api.deployhub.cloud",
-    expires: new Date(Date.now() + 2 * 60 * 60 * 1000)
+    maxAge: new Date(Date.now() + 2 * 60 * 60 * 1000)
 });
 
 const getLocalHostAccessTokenOption = () => ({
     httpOnly: true,
     secure: false,
     sameSite: 'Lax',
-    expires: new Date(Date.now() + 10 * 60 * 60 * 1000)
+    maxAge: new Date(Date.now() + 10 * 60 * 60 * 1000)
 });
 
 
