@@ -1,4 +1,4 @@
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 WORKDIR /app
 
 # Install git and any build tools
@@ -9,7 +9,7 @@ RUN npm ci --omit=dev
 
 COPY . .
 
-FROM node:20-alpine
+FROM node:24-alpine
 WORKDIR /app
 
 RUN apk add --no-cache git openssh
