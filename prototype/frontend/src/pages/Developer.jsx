@@ -31,7 +31,7 @@ const TEAM = [
     github:   'https://github.com/ManjeetShaw',
     linkedin: '',
     skills:   ['Node.js', 'Express', 'MongoDB', 'REST APIs'],
-    isLead:   true,
+    isLead:   false,
   },
   {
     name:     'Kunal Kumar Rajak',
@@ -41,7 +41,7 @@ const TEAM = [
     github:   'https://github.com/Kunalcoder71',
     linkedin: '',
     skills:   ['React', 'Tailwind CSS', 'JavaScript', 'Figma'],
-    isLead:   true,
+    isLead:   false,
   },
   {
     name:     'Divya Das',
