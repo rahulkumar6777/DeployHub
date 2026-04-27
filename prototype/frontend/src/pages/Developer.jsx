@@ -17,7 +17,7 @@ const TEAM = [
     name:     'Karishma Choudhary',
     role:     'Backend Developer',
     bio:      'Owns auth and user management. Signups, logins, permissions, and security — all rock solid.',
-    pic:      '',
+    pic:      'https://avatars.githubusercontent.com/u/228013236?v=4',
     github:   'https://github.com/karyshmaa',
     linkedin: '',
     skills:   ['Spring Boot', 'PostgreSQL', 'API Design'],
@@ -31,7 +31,7 @@ const TEAM = [
     github:   'https://github.com/ManjeetShaw',
     linkedin: '',
     skills:   ['Node.js', 'Express', 'MongoDB', 'REST APIs'],
-    isLead:   true,
+    isLead:   false,
   },
   {
     name:     'Kunal Kumar Rajak',
@@ -41,7 +41,7 @@ const TEAM = [
     github:   'https://github.com/Kunalcoder71',
     linkedin: '',
     skills:   ['React', 'Tailwind CSS', 'JavaScript', 'Figma'],
-    isLead:   true,
+    isLead:   false,
   },
   {
     name:     'Divya Das',
