@@ -11,7 +11,7 @@ const TEAM = [
     github:   'https://github.com/rahulkumar6777',
     linkedin: 'https://www.linkedin.com/in/rahul-kumar-003aa2316/',
     skills:   ['Node.js', 'React', 'Docker', 'Nginx', 'Redis', 'BullMQ', 'CI/CD', 'Linux'],
-    isLead:   true,
+    isLead:   false,
   },
   {
     name:     'Karishma Choudhary',
@@ -21,7 +21,7 @@ const TEAM = [
     github:   'https://github.com/karyshmaa',
     linkedin: '',
     skills:   ['Spring Boot', 'PostgreSQL', 'API Design'],
-    isLead:   false,
+    isLead:   true,
   },
   {
     name:     'Manjeet Shaw',
